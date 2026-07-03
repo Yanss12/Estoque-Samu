@@ -3,11 +3,13 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Select from 'primevue/select'
 import DatePicker from 'primevue/datepicker'
+import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import Paginador from '../components/Paginador.vue'
 import { supabase } from '../lib/supabase'
 import { motivoLabel } from '../lib/movimentacoes'
 import { fetchPerfisMap } from '../lib/perfis'
+import { exportarRelatorioMensal } from '../lib/relatorioExcel'
 
 const toast = useToast()
 const movs = ref([])
@@ -34,6 +36,30 @@ const total = ref(0)
 const temFiltro = computed(
   () => !!(tipoFiltro.value || produtoFiltro.value || setorFiltro.value || periodo.value?.[0])
 )
+
+// Export Excel (formato da planilha base, mensal)
+const exportVisible = ref(false)
+const mesExport = ref(new Date())
+const exportando = ref(false)
+async function fazerExport() {
+  exportando.value = true
+  try {
+    const d = mesExport.value
+    await exportarRelatorioMensal(d.getFullYear(), d.getMonth() + 1)
+    toast.add({ severity: 'success', summary: 'Excel gerado', detail: 'O download foi iniciado.', life: 4000 })
+    exportVisible.value = false
+  } catch (e) {
+    const semDados = e.message?.includes('Sem dados')
+    toast.add({
+      severity: semDados ? 'warn' : 'error',
+      summary: semDados ? 'Nada para exportar' : 'Erro ao gerar Excel',
+      detail: e.message,
+      life: 6000,
+    })
+  } finally {
+    exportando.value = false
+  }
+}
 
 function inicioDia(d) {
   const x = new Date(d)
@@ -130,7 +156,10 @@ onMounted(async () => {
 <template>
   <div class="page-head">
     <h1>Movimentações</h1>
-    <span style="color: var(--text-muted); font-size: 0.9rem">Trilha de auditoria — entradas e saídas</span>
+    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap">
+      <span style="color: var(--text-muted); font-size: 0.9rem">Trilha de auditoria — entradas e saídas</span>
+      <Button label="Exportar Excel" icon="pi pi-file-excel" severity="secondary" outlined @click="exportVisible = true" />
+    </div>
   </div>
 
   <div class="toolbar" style="flex-wrap: wrap">
@@ -221,4 +250,19 @@ onMounted(async () => {
       :disabled="carregando"
     />
   </div>
+
+  <!-- Export Excel (formato da planilha base) -->
+  <Dialog v-model:visible="exportVisible" modal header="Exportar Excel (mensal)" :style="{ width: '26rem' }" :breakpoints="{ '640px': '95vw' }">
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0">
+      Gera um arquivo <strong>.xlsx</strong> no formato da planilha base (uma aba por categoria, com consumo diário PSM/SAMU, entradas, validade e estoque final) para o mês escolhido.
+    </p>
+    <div class="field" style="display: flex; flex-direction: column; gap: 0.4rem">
+      <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted)">Mês de referência</label>
+      <DatePicker v-model="mesExport" view="month" date-format="mm/yy" show-icon class="full" />
+    </div>
+    <template #footer>
+      <Button label="Cancelar" text severity="secondary" :disabled="exportando" @click="exportVisible = false" />
+      <Button label="Gerar Excel" icon="pi pi-download" :loading="exportando" @click="fazerExport" />
+    </template>
+  </Dialog>
 </template>
