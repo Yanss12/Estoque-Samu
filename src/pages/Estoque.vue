@@ -44,11 +44,11 @@ const linhasFiltradas = computed(() =>
 async function carregar() {
   carregando.value = true
   try {
-    const [saldo, prods, sets, alertas] = await Promise.all([
+    const [saldo, prods, sets, lotes] = await Promise.all([
       supabase.from('saldo_estoque').select('*').order('nome'),
       supabase.from('produtos').select('id, nome, categoria, controlado').order('nome'),
       supabase.from('setores').select('id, nome, grupo').eq('ativo', true).order('nome'),
-      supabase.from('alerta_validade').select('produto_id, validade'),
+      supabase.from('saldo_por_lote').select('produto_id, validade, saldo'),
     ])
     if (saldo.error) throw saldo.error
     if (prods.error) throw prods.error
@@ -59,9 +59,11 @@ async function carregar() {
     produtos.value = prods.data ?? []
     setores.value = sets.data ?? []
 
+    // Próxima validade (FEFO) = menor validade entre os lotes COM saldo.
     const vmap = {}
-    for (const a of alertas.data ?? []) {
-      if (!vmap[a.produto_id] || a.validade < vmap[a.produto_id]) vmap[a.produto_id] = a.validade
+    for (const l of lotes.data ?? []) {
+      if (!l.validade || (l.saldo ?? 0) <= 0) continue
+      if (!vmap[l.produto_id] || l.validade < vmap[l.produto_id]) vmap[l.produto_id] = l.validade
     }
     validadePorProduto.value = vmap
   } catch (err) {
@@ -87,10 +89,30 @@ function editarProduto(row) {
   produtoEdit.value = row
   produtoDialogVisible.value = true
 }
+// Datas 'YYYY-MM-DD' viram Date no fuso LOCAL (evita o off-by-one do UTC).
+function parseData(v) {
+  const [y, m, d] = v.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
 function diasParaVencer(produtoId) {
   const v = validadePorProduto.value[produtoId]
   if (!v) return null
-  return Math.ceil((new Date(v) - new Date()) / 86400000)
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+  return Math.ceil((parseData(v) - hoje) / 86400000)
+}
+function proxValidadeFmt(produtoId) {
+  const v = validadePorProduto.value[produtoId]
+  if (!v) return null
+  return parseData(v).toLocaleDateString('pt-BR')
+}
+// Cor por urgência: vencido = vermelho, ≤60d = laranja, senão texto normal.
+function corValidade(produtoId) {
+  const d = diasParaVencer(produtoId)
+  if (d === null) return 'var(--text-muted)'
+  if (d < 0) return 'var(--samu-red)'
+  if (d <= 60) return 'var(--samu-orange)'
+  return 'var(--text)'
 }
 function exportar() {
   dt.value?.exportCSV()
@@ -159,15 +181,17 @@ onMounted(carregar)
       </template>
     </Column>
     <Column field="estoque_minimo" header="Mínimo" sortable style="width: 7rem" />
-    <Column header="Validade" style="width: 9rem">
+    <Column header="Próx. validade" style="width: 11rem">
       <template #body="{ data }">
-        <template v-if="diasParaVencer(data.produto_id) !== null">
-          <span :style="{ color: diasParaVencer(data.produto_id) < 0 ? 'var(--samu-red)' : 'var(--samu-orange)', fontWeight: 600 }">
-            <i class="pi pi-hourglass" style="margin-right: 0.3rem" />
-            {{ diasParaVencer(data.produto_id) < 0 ? 'Vencido' : diasParaVencer(data.produto_id) + 'd' }}
+        <template v-if="proxValidadeFmt(data.produto_id)">
+          <span :style="{ color: corValidade(data.produto_id), fontWeight: diasParaVencer(data.produto_id) <= 60 ? 600 : 500 }">
+            <i class="pi pi-hourglass" style="margin-right: 0.3rem; font-size: 0.8rem" />
+            {{ proxValidadeFmt(data.produto_id) }}
+            <small v-if="diasParaVencer(data.produto_id) < 0"> · vencido</small>
+            <small v-else-if="diasParaVencer(data.produto_id) <= 60"> · {{ diasParaVencer(data.produto_id) }}d</small>
           </span>
         </template>
-        <span v-else style="color: var(--text-muted)">—</span>
+        <span v-else style="color: var(--text-muted)" title="Sem lote com validade">—</span>
       </template>
     </Column>
     <Column header="Ações" style="width: 11rem">

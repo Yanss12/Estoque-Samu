@@ -1,10 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Select from 'primevue/select'
-import InputText from 'primevue/inputtext'
-import IconField from 'primevue/iconfield'
-import InputIcon from 'primevue/inputicon'
+import DatePicker from 'primevue/datepicker'
+import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
 import { motivoLabel } from '../lib/movimentacoes'
 import { fetchPerfisMap } from '../lib/perfis'
@@ -12,42 +11,90 @@ import { fetchPerfisMap } from '../lib/perfis'
 const toast = useToast()
 const movs = ref([])
 const perfisMap = ref({})
+const produtos = ref([])
+const setores = ref([])
 const carregando = ref(false)
-const busca = ref('')
+
+// Filtros
 const tipoFiltro = ref(null)
+const produtoFiltro = ref(null)
+const setorFiltro = ref(null)
+const periodo = ref(null) // [inicio, fim]
 const tipoOpcoes = [
   { label: 'Entrada', value: 'entrada' },
   { label: 'Saída', value: 'saida' },
 ]
 
-const filtradas = computed(() =>
-  movs.value.filter((m) => {
-    if (tipoFiltro.value && m.tipo !== tipoFiltro.value) return false
-    if (busca.value && !(m.produto?.nome ?? '').toLowerCase().includes(busca.value.toLowerCase())) return false
-    return true
-  })
+// Paginação (server-side)
+const page = ref(0)
+const pageSize = ref(25)
+const total = ref(0)
+const tamanhoOpcoes = [25, 50, 100]
+
+const primeiro = computed(() => (total.value === 0 ? 0 : page.value * pageSize.value + 1))
+const ultimo = computed(() => Math.min((page.value + 1) * pageSize.value, total.value))
+const temAnterior = computed(() => page.value > 0)
+const temProximo = computed(() => ultimo.value < total.value)
+const temFiltro = computed(
+  () => !!(tipoFiltro.value || produtoFiltro.value || setorFiltro.value || periodo.value?.[0])
 )
+
+function inicioDia(d) {
+  const x = new Date(d)
+  x.setHours(0, 0, 0, 0)
+  return x.toISOString()
+}
+function fimDia(d) {
+  const x = new Date(d)
+  x.setHours(23, 59, 59, 999)
+  return x.toISOString()
+}
 
 async function carregar() {
   carregando.value = true
-  const [movsRes, perfis] = await Promise.all([
-    supabase
-      .from('movimentacoes')
-      .select('id, tipo, quantidade, motivo, data, usuario_id, produto:produtos(nome, controlado), setor:setores(nome), lote:lotes(numero_lote)')
-      .order('data', { ascending: false })
-      .limit(500),
-    fetchPerfisMap(),
-  ])
-  if (movsRes.error) toast.add({ severity: 'error', summary: 'Erro', detail: movsRes.error.message, life: 6000 })
-  else movs.value = movsRes.data ?? []
-  perfisMap.value = perfis
+  let q = supabase
+    .from('movimentacoes')
+    .select(
+      'id, tipo, quantidade, motivo, data, usuario_id, produto:produtos(nome, controlado), setor:setores(nome), lote:lotes(numero_lote)',
+      { count: 'exact' }
+    )
+    .order('data', { ascending: false })
+
+  if (tipoFiltro.value) q = q.eq('tipo', tipoFiltro.value)
+  if (produtoFiltro.value) q = q.eq('produto_id', produtoFiltro.value)
+  if (setorFiltro.value) q = q.eq('setor_id', setorFiltro.value)
+  if (periodo.value?.[0]) q = q.gte('data', inicioDia(periodo.value[0]))
+  if (periodo.value?.[1]) q = q.lte('data', fimDia(periodo.value[1]))
+
+  const from = page.value * pageSize.value
+  q = q.range(from, from + pageSize.value - 1)
+
+  const { data, count, error } = await q
+  if (error) toast.add({ severity: 'error', summary: 'Erro', detail: error.message, life: 6000 })
+  else {
+    movs.value = data ?? []
+    total.value = count ?? 0
+  }
   carregando.value = false
 }
+
+function limparFiltros() {
+  tipoFiltro.value = null
+  produtoFiltro.value = null
+  setorFiltro.value = null
+  periodo.value = null
+}
+
+// Qualquer mudança de filtro/tamanho volta pra 1ª página e recarrega.
+watch([tipoFiltro, produtoFiltro, setorFiltro, periodo, pageSize], () => {
+  page.value = 0
+  carregar()
+})
+watch(page, carregar)
 
 function autor(m) {
   return perfisMap.value[m.usuario_id] || 'usuário removido'
 }
-
 function subtitulo(m) {
   const t = m.tipo === 'entrada' ? 'Entrada' : 'Saída'
   let s =
@@ -72,7 +119,17 @@ function fmt(d) {
     : '—'
 }
 
-onMounted(carregar)
+onMounted(async () => {
+  const [perfis, prods, sets] = await Promise.all([
+    fetchPerfisMap(),
+    supabase.from('produtos').select('id, nome').order('nome'),
+    supabase.from('setores').select('id, nome').eq('ativo', true).order('nome'),
+  ])
+  perfisMap.value = perfis
+  produtos.value = prods.data ?? []
+  setores.value = sets.data ?? []
+  carregar()
+})
 </script>
 
 <template>
@@ -81,17 +138,58 @@ onMounted(carregar)
     <span style="color: var(--text-muted); font-size: 0.9rem">Trilha de auditoria — entradas e saídas</span>
   </div>
 
-  <div class="toolbar">
-    <IconField class="grow">
-      <InputIcon class="pi pi-search" />
-      <InputText v-model="busca" placeholder="Buscar por produto..." class="full" />
-    </IconField>
-    <Select v-model="tipoFiltro" :options="tipoOpcoes" option-label="label" option-value="value" placeholder="Tipo" show-clear style="min-width: 10rem" />
+  <div class="toolbar" style="flex-wrap: wrap">
+    <Select
+      v-model="tipoFiltro"
+      :options="tipoOpcoes"
+      option-label="label"
+      option-value="value"
+      placeholder="Tipo"
+      show-clear
+      style="min-width: 9rem"
+    />
+    <Select
+      v-model="produtoFiltro"
+      :options="produtos"
+      option-label="nome"
+      option-value="id"
+      filter
+      placeholder="Produto"
+      show-clear
+      style="min-width: 15rem"
+    />
+    <Select
+      v-model="setorFiltro"
+      :options="setores"
+      option-label="nome"
+      option-value="id"
+      placeholder="Setor"
+      show-clear
+      style="min-width: 10rem"
+    />
+    <DatePicker
+      v-model="periodo"
+      selection-mode="range"
+      :manual-input="false"
+      date-format="dd/mm/yy"
+      placeholder="Período"
+      show-icon
+      show-button-bar
+      style="min-width: 15rem"
+    />
+    <Button
+      v-if="temFiltro"
+      label="Limpar"
+      icon="pi pi-filter-slash"
+      text
+      severity="secondary"
+      @click="limparFiltros"
+    />
   </div>
 
   <div class="card-panel">
-    <div v-if="filtradas.length" class="feed">
-      <div v-for="m in filtradas" :key="m.id" class="feed-row">
+    <div v-if="movs.length" class="feed">
+      <div v-for="m in movs" :key="m.id" class="feed-row">
         <span class="feed-chip" :class="m.tipo === 'entrada' ? 'in' : 'out'">
           <i :class="m.tipo === 'entrada' ? 'pi pi-arrow-down-left' : ehAvariado(m) ? 'pi pi-exclamation-triangle' : 'pi pi-arrow-up-right'" />
         </span>
@@ -114,7 +212,44 @@ onMounted(carregar)
       </div>
     </div>
     <div v-else class="empty" style="padding: 0.5rem 0">
-      {{ carregando ? 'Carregando...' : 'Nenhuma movimentação registrada ainda.' }}
+      {{ carregando ? 'Carregando...' : temFiltro ? 'Nenhuma movimentação para os filtros escolhidos.' : 'Nenhuma movimentação registrada ainda.' }}
+    </div>
+
+    <!-- Paginação -->
+    <div v-if="total" class="pager">
+      <span class="pager-info">{{ primeiro }}–{{ ultimo }} de {{ total }}</span>
+      <div class="pager-ctrl">
+        <span class="pager-lbl">por página</span>
+        <Select v-model="pageSize" :options="tamanhoOpcoes" style="width: 5.5rem" />
+        <Button icon="pi pi-angle-left" text rounded severity="secondary" :disabled="!temAnterior || carregando" @click="page--" />
+        <Button icon="pi pi-angle-right" text rounded severity="secondary" :disabled="!temProximo || carregando" @click="page++" />
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.pager-info {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.pager-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.pager-lbl {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+</style>
