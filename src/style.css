@@ -1,0 +1,655 @@
+:root {
+  /* Identidade NEUTRA (cinza) — sem azul. Cores só pra status. */
+  --samu-blue: #27272a; /* "tinta" neutra — sidebar/login */
+  --samu-blue-2: #71717a; /* destaque neutro */
+  --samu-green: #2a9d8f; /* sucesso / entrada */
+  --samu-orange: #f4a261; /* atenção / controlado / vencendo */
+  --samu-red: #e63946; /* crítico / saída / vencido */
+
+  /* Superfícies — tema claro (cinza neutro) */
+  --bg: #f4f4f5;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --border: #e4e4e7;
+  --text: #1f1f23;
+  --text-muted: #71717a;
+  --sidebar-bg: #27272a;
+  --sidebar-text: #d4d4d8;
+  --sidebar-active: #3f3f46;
+
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+html.app-dark {
+  /* Superfícies — tema escuro neutro (plantão noturno) */
+  --bg: #18181b;
+  --surface: #232328;
+  --surface-2: #1f1f23;
+  --border: #2e2e34;
+  --text: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --sidebar-bg: #121214;
+  --sidebar-text: #d4d4d8;
+  --sidebar-active: #2e2e34;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.mono {
+  font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+
+/* ============ Layout com sidebar ============ */
+.shell {
+  display: flex;
+  min-height: 100svh;
+}
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0.75rem;
+  transition: width 0.2s ease;
+}
+
+.sidebar.collapsed {
+  width: 72px;
+}
+
+.sidebar .logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.5rem 1.2rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.sidebar .nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar .nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.7rem;
+  border-radius: 8px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.sidebar .nav a:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.sidebar .nav a.router-link-active {
+  background: var(--sidebar-active);
+  color: #fff;
+}
+
+.sidebar .nav a i {
+  font-size: 1.1rem;
+  width: 1.2rem;
+  text-align: center;
+}
+
+.sidebar.collapsed .logo span,
+.sidebar.collapsed .nav a span {
+  display: none;
+}
+
+.sidebar .spacer {
+  flex: 1;
+}
+
+.sidebar .collapse-btn {
+  background: transparent;
+  border: none;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.sidebar .collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ============ Área principal ============ */
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar .right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.topbar .who {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.topbar .who .name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.topbar .who .role {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.content {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 1500px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.page-head h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.toolbar .grow {
+  flex: 1;
+  min-width: 220px;
+}
+
+.full {
+  width: 100%;
+}
+
+/* InputNumber precisa respeitar a largura do container (senão estoura o diálogo) */
+.p-inputnumber {
+  width: 100%;
+}
+.p-inputnumber-input {
+  width: 100%;
+  min-width: 0;
+}
+
+/* ============ Cards de métrica (Dashboard) ============ */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+}
+
+.metric.alert {
+  border-color: var(--samu-red);
+  background: color-mix(in srgb, var(--samu-red) 7%, var(--surface));
+}
+
+.metric.warn {
+  border-color: var(--samu-orange);
+  background: color-mix(in srgb, var(--samu-orange) 10%, var(--surface));
+}
+
+.metric .label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.metric .value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 0.35rem;
+}
+
+.metric .list {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.metric .list .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  gap: 0.5rem;
+}
+
+.metric .empty {
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Chip de ícone nos cards de métrica */
+.metric-top {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+}
+
+.metric-chip {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.metric-chip.info {
+  background: color-mix(in srgb, var(--samu-blue-2) 22%, var(--surface));
+  color: var(--samu-blue-2);
+}
+.metric-chip.danger {
+  background: color-mix(in srgb, var(--samu-red) 16%, var(--surface));
+  color: var(--samu-red);
+}
+.metric-chip.warn {
+  background: color-mix(in srgb, var(--samu-orange) 22%, var(--surface));
+  color: var(--samu-orange);
+}
+
+.metric-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Cabeçalho de painel (título + "ver todas") */
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.panel-head h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ver-todas {
+  font-size: 0.85rem;
+  color: var(--samu-blue-2);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.ver-todas:hover {
+  text-decoration: underline;
+}
+
+/* Feed de atividade (movimentações) */
+.feed {
+  display: flex;
+  flex-direction: column;
+}
+
+.feed-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--border);
+}
+.feed-row:first-child {
+  border-top: none;
+}
+
+.feed-chip {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+.feed-chip.in {
+  background: color-mix(in srgb, var(--samu-green) 18%, var(--surface));
+  color: var(--samu-green);
+}
+.feed-chip.out {
+  background: color-mix(in srgb, var(--samu-red) 16%, var(--surface));
+  color: var(--samu-red);
+}
+
+.feed-main {
+  flex: 1;
+  min-width: 0;
+}
+.feed-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.feed-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+.feed-autor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.45rem;
+  padding-left: 0.55rem;
+  border-left: 1px solid var(--border);
+}
+.feed-autor i {
+  font-size: 0.72rem;
+}
+
+.feed-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+.feed-qty {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.feed-qty.in {
+  color: var(--samu-green);
+}
+.feed-qty.out {
+  color: var(--samu-red);
+}
+.feed-time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.pill-controlado {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--samu-orange) 22%, var(--surface));
+  color: var(--samu-orange);
+}
+
+/* ===== DataTable repaginada (Estoque / Psicotrópicos) ===== */
+.tabela-moderna,
+.tabela-moderna .p-datatable-table-container,
+.tabela-moderna .p-paginator {
+  background: transparent;
+}
+.tabela-moderna .p-datatable-thead > tr > th {
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.55rem 1rem;
+  border-color: var(--border);
+}
+.tabela-moderna .p-datatable-tbody > tr {
+  background: transparent;
+  transition: background 0.12s ease;
+}
+.tabela-moderna .p-datatable-tbody > tr > td {
+  padding: 0.8rem 1rem;
+  border-color: var(--border);
+}
+.tabela-moderna .p-datatable-tbody > tr:hover {
+  background: var(--surface-2);
+}
+
+/* Pílula de categoria — neutra (sem azul); laranja só p/ controlado */
+.cat-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.cat-pill.controlado {
+  background: color-mix(in srgb, var(--samu-orange) 20%, var(--surface));
+  color: var(--samu-orange);
+  border-color: transparent;
+}
+
+/* Saldo em destaque */
+.saldo-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.saldo-pill.baixo {
+  color: var(--samu-red);
+}
+
+/* Distribuição manual por lote no diálogo de saída */
+.lotes-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.lote-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.lote-info {
+  min-width: 0;
+}
+.lote-num {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.lote-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+.lote-total {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+}
+
+/* ============ Tabela ============ */
+.saldo-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.saldo-num.baixo {
+  color: var(--samu-red);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.card-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+/* ============ Login ============ */
+.login-wrap {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #3f3f46, #18181b);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.login-card .brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.login-card .brand h1 {
+  font-size: 1.3rem;
+  margin: 0;
+  color: var(--samu-blue);
+}
+
+html.app-dark .login-card .brand h1 {
+  color: #fff;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Aviso de medicamento controlado no diálogo */
+.aviso-controlado {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--samu-orange) 18%, var(--surface));
+  border: 1px solid var(--samu-orange);
+  border-radius: 8px;
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.aviso-controlado i {
+  color: var(--samu-orange);
+  font-size: 1.1rem;
+  margin-top: 1px;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 72px;
+  }
+  .sidebar .logo span,
+  .sidebar .nav a span {
+    display: none;
+  }
+  .content {
+    padding: 1rem;
+  }
+}
