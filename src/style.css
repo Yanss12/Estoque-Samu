@@ -690,3 +690,17 @@ html.app-dark .login-card .brand h1 {
 .sem-paginador-nativo .p-paginator {
   display: none;
 }
+
+/* Observação da movimentação (feed) */
+.feed-obs {
+  margin-top: 0.2rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.feed-obs .pi {
+  font-size: 0.75rem;
+}

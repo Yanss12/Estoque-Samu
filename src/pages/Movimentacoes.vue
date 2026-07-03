@@ -51,7 +51,7 @@ async function carregar() {
   let q = supabase
     .from('movimentacoes')
     .select(
-      'id, tipo, quantidade, motivo, data, usuario_id, produto:produtos(nome, controlado), setor:setores(nome), lote:lotes(numero_lote)',
+      'id, tipo, quantidade, motivo, observacao, data, usuario_id, produto:produtos(nome, controlado), setor:setores(nome), lote:lotes(numero_lote)',
       { count: 'exact' }
     )
     .order('data', { ascending: false })
@@ -196,6 +196,9 @@ onMounted(async () => {
           <div class="feed-sub">
             {{ subtitulo(m) }}
             <span class="feed-autor"><i class="pi pi-user" /> {{ autor(m) }}</span>
+          </div>
+          <div v-if="m.observacao" class="feed-obs">
+            <i class="pi pi-comment" /> {{ m.observacao }}
           </div>
         </div>
         <div class="feed-right">
