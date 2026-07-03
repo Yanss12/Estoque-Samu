@@ -10,7 +10,7 @@ import Textarea from 'primevue/textarea'
 import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
-import { user } from '../lib/auth'
+import { user, perfil } from '../lib/auth'
 import { MOTIVOS_ENTRADA, MOTIVOS_SAIDA } from '../lib/movimentacoes'
 
 const props = defineProps({
@@ -274,7 +274,7 @@ async function salvar() {
       <i class="pi pi-shield" />
       <span>
         <strong>Medicamento controlado (Portaria 344/98).</strong>
-        Registrado sob auditoria de <strong>{{ user?.email }}</strong>. Informe o lote.
+        Registrado sob auditoria de <strong>{{ perfil?.nome || user?.email }}</strong>. Informe o lote.
       </span>
     </div>
 
