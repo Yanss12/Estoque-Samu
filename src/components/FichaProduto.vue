@@ -28,7 +28,9 @@ watch(
       supabase
         .from('saldo_por_lote')
         .select('lote_id, numero_lote, validade, saldo')
-        .eq('produto_id', pid),
+        .eq('produto_id', pid)
+        .gt('saldo', 0)
+        .order('validade', { ascending: true, nullsFirst: false }),
       supabase
         .from('movimentacoes')
         .select('id, tipo, quantidade, motivo, data, usuario_id, setor:setores(nome)')
@@ -46,6 +48,11 @@ watch(
 
 function fmtData(d) {
   if (!d) return '—'
+  // Datas 'YYYY-MM-DD' (validade) são parseadas como LOCAL p/ não cair 1 dia (fuso).
+  if (typeof d === 'string' && d.length === 10) {
+    const [y, m, day] = d.split('-').map(Number)
+    return new Date(y, m - 1, day).toLocaleDateString('pt-BR')
+  }
   return new Date(d).toLocaleDateString('pt-BR')
 }
 function autor(m) {
@@ -78,7 +85,10 @@ function autor(m) {
       <Column field="saldo" header="Saldo" />
     </DataTable>
 
-    <h3 style="margin: 1.25rem 0 0.5rem">Últimas movimentações</h3>
+    <h3 style="margin: 1.25rem 0 0.5rem">
+      Últimas movimentações
+      <span style="font-weight: 400; color: var(--text-muted); font-size: 0.85rem">(10 mais recentes)</span>
+    </h3>
     <DataTable :value="movs" :loading="carregando" size="small">
       <template #empty>Sem movimentações.</template>
       <Column header="Data">
