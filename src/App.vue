@@ -3,14 +3,17 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
+import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import LogoSamu from './components/LogoSamu.vue'
-import { user, perfil, signOut } from './lib/auth'
+import TrocarSenha from './components/TrocarSenha.vue'
+import { user, perfil, precisaTrocarSenha, signOut } from './lib/auth'
 import { isDark, toggleTheme } from './lib/theme'
 
 const router = useRouter()
 const logged = computed(() => !!user.value)
 const collapsed = ref(false)
+const trocaSenhaVisivel = ref(false)
 
 const nav = [
   { name: 'dashboard', label: 'Dashboard', icon: 'pi pi-th-large' },
@@ -31,6 +34,14 @@ async function sair() {
 
   <!-- Telas públicas (login) ocupam a tela inteira -->
   <router-view v-if="!logged" />
+
+  <!-- 1º acesso: força a troca da senha padrão antes de liberar o sistema -->
+  <div v-else-if="precisaTrocarSenha" class="troca-tela">
+    <div class="troca-brand"><LogoSamu :size="34" /><span>Estoque SAMU</span></div>
+    <div class="troca-box">
+      <TrocarSenha obrigatorio @cancel="router.push({ name: 'login' })" />
+    </div>
+  </div>
 
   <!-- App autenticado: sidebar + topbar + conteúdo -->
   <div v-else class="shell">
@@ -75,6 +86,13 @@ async function sair() {
             <span class="role">{{ perfil?.papel || 'operador' }}</span>
           </div>
           <Button
+            icon="pi pi-key"
+            label="Senha"
+            text
+            severity="secondary"
+            @click="trocaSenhaVisivel = true"
+          />
+          <Button
             icon="pi pi-sign-out"
             label="Sair"
             text
@@ -88,5 +106,19 @@ async function sair() {
         <router-view />
       </main>
     </div>
+
+    <!-- Troca de senha voluntária -->
+    <Dialog
+      v-model:visible="trocaSenhaVisivel"
+      modal
+      :header="null"
+      :show-header="false"
+      :style="{ width: '28rem' }"
+      :breakpoints="{ '640px': '95vw' }"
+      :dismissable-mask="true"
+      content-class="troca-dialog-content"
+    >
+      <TrocarSenha @done="trocaSenhaVisivel = false" @cancel="trocaSenhaVisivel = false" />
+    </Dialog>
   </div>
 </template>

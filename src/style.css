@@ -653,3 +653,35 @@ html.app-dark .login-card .brand h1 {
     padding: 1rem;
   }
 }
+
+/* ===== Troca de senha (1º acesso) ===== */
+.troca-tela {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 2rem 1rem;
+  background: var(--bg);
+}
+.troca-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text);
+}
+.troca-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.75rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  width: 100%;
+  max-width: 27rem;
+}
+.troca-dialog-content {
+  padding: 1.5rem 1.5rem 1.25rem !important;
+}
