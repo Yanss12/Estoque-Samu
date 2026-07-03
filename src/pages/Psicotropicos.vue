@@ -8,12 +8,16 @@ import { supabase } from '../lib/supabase'
 import MovimentacaoDialog from '../components/MovimentacaoDialog.vue'
 import FichaProduto from '../components/FichaProduto.vue'
 import ProdutoDialog from '../components/ProdutoDialog.vue'
+import Paginador from '../components/Paginador.vue'
 
 const toast = useToast()
 const linhas = ref([])
 const produtos = ref([])
 const setores = ref([])
 const carregando = ref(false)
+
+const first = ref(0)
+const rows = ref(15)
 
 const dialogVisible = ref(false)
 const preselect = ref(null)
@@ -76,7 +80,17 @@ onMounted(carregar)
   </div>
 
   <div class="card-panel" style="padding: 0.35rem 0.85rem">
-  <DataTable :value="linhas" :loading="carregando" data-key="produto_id" paginator :rows="15" size="small" class="tabela-moderna">
+  <DataTable
+    :value="linhas"
+    :loading="carregando"
+    data-key="produto_id"
+    paginator
+    v-model:first="first"
+    v-model:rows="rows"
+    removable-sort
+    size="small"
+    class="tabela-moderna sem-paginador-nativo"
+  >
     <template #empty>Nenhum psicotrópico cadastrado.</template>
     <Column field="nome" header="Medicamento" sortable />
     <Column field="unidade_medida" header="Unidade" style="width: 9rem" />
@@ -94,6 +108,13 @@ onMounted(carregar)
       </template>
     </Column>
   </DataTable>
+  <Paginador
+    v-model:first="first"
+    v-model:rows="rows"
+    :total="linhas.length"
+    :rows-options="[15, 30, 50, 100]"
+    :disabled="carregando"
+  />
   </div>
 
   <MovimentacaoDialog

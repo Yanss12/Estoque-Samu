@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -13,6 +13,7 @@ import { CATEGORIAS, catLabel } from '../lib/categorias'
 import MovimentacaoDialog from '../components/MovimentacaoDialog.vue'
 import FichaProduto from '../components/FichaProduto.vue'
 import ProdutoDialog from '../components/ProdutoDialog.vue'
+import Paginador from '../components/Paginador.vue'
 
 const toast = useToast()
 
@@ -24,6 +25,10 @@ const carregando = ref(false)
 
 const busca = ref('')
 const categoriaFiltro = ref(null)
+
+// Paginação (controla a DataTable; UI vem do <Paginador>)
+const first = ref(0)
+const rows = ref(15)
 
 const dt = ref(null)
 const dialogVisible = ref(false)
@@ -40,6 +45,9 @@ const linhasFiltradas = computed(() =>
     return true
   })
 )
+
+// Filtrar volta pra 1ª página
+watch([busca, categoriaFiltro], () => (first.value = 0))
 
 async function carregar() {
   carregando.value = true
@@ -155,14 +163,12 @@ onMounted(carregar)
     :loading="carregando"
     data-key="produto_id"
     paginator
-    :rows="15"
-    :rows-per-page-options="[15, 30, 50, 100]"
+    v-model:first="first"
+    v-model:rows="rows"
     removable-sort
     size="small"
-    class="tabela-moderna"
+    class="tabela-moderna sem-paginador-nativo"
     export-filename="estoque-samu"
-    current-page-report-template="{first}–{last} de {totalRecords}"
-    paginator-template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink RowsPerPageDropdown"
   >
     <template #empty>Nenhum produto encontrado.</template>
 
@@ -203,6 +209,13 @@ onMounted(carregar)
       </template>
     </Column>
   </DataTable>
+  <Paginador
+    v-model:first="first"
+    v-model:rows="rows"
+    :total="linhasFiltradas.length"
+    :rows-options="[15, 30, 50, 100]"
+    :disabled="carregando"
+  />
   </div>
 
   <MovimentacaoDialog

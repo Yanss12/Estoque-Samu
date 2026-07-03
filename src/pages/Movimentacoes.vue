@@ -4,6 +4,7 @@ import { useToast } from 'primevue/usetoast'
 import Select from 'primevue/select'
 import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
+import Paginador from '../components/Paginador.vue'
 import { supabase } from '../lib/supabase'
 import { motivoLabel } from '../lib/movimentacoes'
 import { fetchPerfisMap } from '../lib/perfis'
@@ -26,15 +27,10 @@ const tipoOpcoes = [
 ]
 
 // Paginação (server-side)
-const page = ref(0)
-const pageSize = ref(25)
+const first = ref(0)
+const rows = ref(25)
 const total = ref(0)
-const tamanhoOpcoes = [25, 50, 100]
 
-const primeiro = computed(() => (total.value === 0 ? 0 : page.value * pageSize.value + 1))
-const ultimo = computed(() => Math.min((page.value + 1) * pageSize.value, total.value))
-const temAnterior = computed(() => page.value > 0)
-const temProximo = computed(() => ultimo.value < total.value)
 const temFiltro = computed(
   () => !!(tipoFiltro.value || produtoFiltro.value || setorFiltro.value || periodo.value?.[0])
 )
@@ -66,8 +62,7 @@ async function carregar() {
   if (periodo.value?.[0]) q = q.gte('data', inicioDia(periodo.value[0]))
   if (periodo.value?.[1]) q = q.lte('data', fimDia(periodo.value[1]))
 
-  const from = page.value * pageSize.value
-  q = q.range(from, from + pageSize.value - 1)
+  q = q.range(first.value, first.value + rows.value - 1)
 
   const { data, count, error } = await q
   if (error) toast.add({ severity: 'error', summary: 'Erro', detail: error.message, life: 6000 })
@@ -86,11 +81,11 @@ function limparFiltros() {
 }
 
 // Qualquer mudança de filtro/tamanho volta pra 1ª página e recarrega.
-watch([tipoFiltro, produtoFiltro, setorFiltro, periodo, pageSize], () => {
-  page.value = 0
+watch([tipoFiltro, produtoFiltro, setorFiltro, periodo, rows], () => {
+  first.value = 0
   carregar()
 })
-watch(page, carregar)
+watch(first, carregar)
 
 function autor(m) {
   return perfisMap.value[m.usuario_id] || 'usuário removido'
@@ -216,40 +211,11 @@ onMounted(async () => {
     </div>
 
     <!-- Paginação -->
-    <div v-if="total" class="pager">
-      <span class="pager-info">{{ primeiro }}–{{ ultimo }} de {{ total }}</span>
-      <div class="pager-ctrl">
-        <span class="pager-lbl">por página</span>
-        <Select v-model="pageSize" :options="tamanhoOpcoes" style="width: 5.5rem" />
-        <Button icon="pi pi-angle-left" text rounded severity="secondary" :disabled="!temAnterior || carregando" @click="page--" />
-        <Button icon="pi pi-angle-right" text rounded severity="secondary" :disabled="!temProximo || carregando" @click="page++" />
-      </div>
-    </div>
+    <Paginador
+      v-model:first="first"
+      v-model:rows="rows"
+      :total="total"
+      :disabled="carregando"
+    />
   </div>
 </template>
-
-<style scoped>
-.pager {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
-}
-.pager-info {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-.pager-ctrl {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.pager-lbl {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-</style>

@@ -685,3 +685,8 @@ html.app-dark .login-card .brand h1 {
 .troca-dialog-content {
   padding: 1.5rem 1.5rem 1.25rem !important;
 }
+
+/* Tabelas usam o <Paginador> padrão do sistema; esconde o paginador nativo do PrimeVue */
+.sem-paginador-nativo .p-paginator {
+  display: none;
+}
