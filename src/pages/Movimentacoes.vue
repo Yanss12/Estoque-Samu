@@ -3,13 +3,13 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Select from 'primevue/select'
 import DatePicker from 'primevue/datepicker'
-import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import Paginador from '../components/Paginador.vue'
 import { supabase } from '../lib/supabase'
 import { motivoLabel } from '../lib/movimentacoes'
+import { catLabel } from '../lib/categorias'
 import { fetchPerfisMap } from '../lib/perfis'
-import { exportarRelatorioMensal } from '../lib/relatorioExcel'
+import { baixarPlanilhaSimples } from '../lib/relatorioExcel'
 
 const toast = useToast()
 const movs = ref([])
@@ -37,25 +37,59 @@ const temFiltro = computed(
   () => !!(tipoFiltro.value || produtoFiltro.value || setorFiltro.value || periodo.value?.[0])
 )
 
-// Export Excel (formato da planilha base, mensal)
-const exportVisible = ref(false)
-const mesExport = ref(new Date())
+// Export Excel: a LISTA de movimentações (respeita os filtros atuais).
 const exportando = ref(false)
-async function fazerExport() {
+async function exportarMovimentacoes() {
   exportando.value = true
   try {
-    const d = mesExport.value
-    await exportarRelatorioMensal(d.getFullYear(), d.getMonth() + 1)
-    toast.add({ severity: 'success', summary: 'Excel gerado', detail: 'O download foi iniciado.', life: 4000 })
-    exportVisible.value = false
+    const todas = []
+    const size = 1000
+    for (let from = 0; ; from += size) {
+      let q = supabase
+        .from('movimentacoes')
+        .select(
+          'tipo, quantidade, motivo, observacao, data, usuario_id, produto:produtos(nome, categoria), setor:setores(nome), lote:lotes(numero_lote)'
+        )
+        .order('data', { ascending: false })
+      if (tipoFiltro.value) q = q.eq('tipo', tipoFiltro.value)
+      if (produtoFiltro.value) q = q.eq('produto_id', produtoFiltro.value)
+      if (setorFiltro.value) q = q.eq('setor_id', setorFiltro.value)
+      if (periodo.value?.[0]) q = q.gte('data', inicioDia(periodo.value[0]))
+      if (periodo.value?.[1]) q = q.lte('data', fimDia(periodo.value[1]))
+      q = q.range(from, from + size - 1)
+      const { data, error } = await q
+      if (error) throw error
+      todas.push(...(data ?? []))
+      if (!data || data.length < size) break
+    }
+    if (!todas.length) {
+      toast.add({ severity: 'warn', summary: 'Nada para exportar', detail: 'Nenhuma movimentação para os filtros escolhidos.', life: 5000 })
+      return
+    }
+    const linhas = todas.map((m) => [
+      fmt(m.data),
+      m.produto?.nome || '',
+      m.produto?.categoria ? catLabel(m.produto.categoria) : '',
+      m.tipo === 'entrada' ? 'Entrada' : 'Saída',
+      m.quantidade,
+      m.lote?.numero_lote || '',
+      m.setor?.nome || '',
+      motivoLabel(m.motivo),
+      m.observacao || '',
+      perfisMap.value[m.usuario_id] || '',
+    ])
+    const h = new Date()
+    const stamp = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`
+    await baixarPlanilhaSimples(
+      `Movimentacoes_${stamp}.xlsx`,
+      'Movimentações',
+      ['Data/Hora', 'Produto', 'Categoria', 'Tipo', 'Qtd', 'Lote', 'Setor', 'Motivo', 'Observação', 'Por'],
+      linhas,
+      [16, 34, 14, 9, 7, 14, 14, 16, 30, 16]
+    )
+    toast.add({ severity: 'success', summary: 'Excel gerado', detail: `${linhas.length} movimentações exportadas.`, life: 4000 })
   } catch (e) {
-    const semDados = e.message?.includes('Sem dados')
-    toast.add({
-      severity: semDados ? 'warn' : 'error',
-      summary: semDados ? 'Nada para exportar' : 'Erro ao gerar Excel',
-      detail: e.message,
-      life: 6000,
-    })
+    toast.add({ severity: 'error', summary: 'Erro ao gerar Excel', detail: e.message, life: 6000 })
   } finally {
     exportando.value = false
   }
@@ -158,7 +192,7 @@ onMounted(async () => {
     <h1>Movimentações</h1>
     <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap">
       <span style="color: var(--text-muted); font-size: 0.9rem">Trilha de auditoria — entradas e saídas</span>
-      <Button label="Exportar Excel" icon="pi pi-file-excel" severity="secondary" outlined @click="exportVisible = true" />
+      <Button label="Exportar Excel" icon="pi pi-file-excel" severity="secondary" outlined :loading="exportando" @click="exportarMovimentacoes" />
     </div>
   </div>
 
@@ -250,19 +284,4 @@ onMounted(async () => {
       :disabled="carregando"
     />
   </div>
-
-  <!-- Export Excel (formato da planilha base) -->
-  <Dialog v-model:visible="exportVisible" modal header="Exportar Excel (mensal)" :style="{ width: '26rem' }" :breakpoints="{ '640px': '95vw' }">
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0">
-      Gera um arquivo <strong>.xlsx</strong> no formato da planilha base (uma aba por categoria, com consumo diário PSM/SAMU, entradas, validade e estoque final) para o mês escolhido.
-    </p>
-    <div class="field" style="display: flex; flex-direction: column; gap: 0.4rem">
-      <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted)">Mês de referência</label>
-      <DatePicker v-model="mesExport" view="month" date-format="mm/yy" show-icon class="full" />
-    </div>
-    <template #footer>
-      <Button label="Cancelar" text severity="secondary" :disabled="exportando" @click="exportVisible = false" />
-      <Button label="Gerar Excel" icon="pi pi-download" :loading="exportando" @click="fazerExport" />
-    </template>
-  </Dialog>
 </template>

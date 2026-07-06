@@ -7,6 +7,8 @@ import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
+import DatePicker from 'primevue/datepicker'
+import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
 import { CATEGORIAS, catLabel } from '../lib/categorias'
@@ -14,7 +16,7 @@ import MovimentacaoDialog from '../components/MovimentacaoDialog.vue'
 import FichaProduto from '../components/FichaProduto.vue'
 import ProdutoDialog from '../components/ProdutoDialog.vue'
 import Paginador from '../components/Paginador.vue'
-import { baixarPlanilhaSimples } from '../lib/relatorioExcel'
+import { exportarRelatorioMensal } from '../lib/relatorioExcel'
 
 const toast = useToast()
 
@@ -30,6 +32,11 @@ const categoriaFiltro = ref(null)
 // Paginação (controla a DataTable; UI vem do <Paginador>)
 const first = ref(0)
 const rows = ref(15)
+
+// Export Excel (relatório mensal, formato da planilha base)
+const exportVisible = ref(false)
+const mesExport = ref(new Date())
+const exportando = ref(false)
 
 const dialogVisible = ref(false)
 const preselect = ref(null)
@@ -122,28 +129,23 @@ function corValidade(produtoId) {
   if (d <= 60) return 'var(--samu-orange)'
   return 'var(--text)'
 }
-async function exportar() {
+async function fazerExportMensal() {
+  exportando.value = true
   try {
-    const rows = linhasFiltradas.value.map((r) => [
-      r.nome,
-      catLabel(r.categoria),
-      r.unidade_medida,
-      r.saldo,
-      r.estoque_minimo,
-      proxValidadeFmt(r.produto_id) || '—',
-    ])
-    const h = new Date()
-    const stamp = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`
-    await baixarPlanilhaSimples(
-      `Estoque_atual_${stamp}.xlsx`,
-      'Estoque',
-      ['Produto', 'Categoria', 'Unidade', 'Saldo', 'Mínimo', 'Próx. validade'],
-      rows,
-      [40, 14, 14, 8, 8, 14]
-    )
-    toast.add({ severity: 'success', summary: 'Excel gerado', detail: 'O download foi iniciado.', life: 3500 })
+    const d = mesExport.value
+    await exportarRelatorioMensal(d.getFullYear(), d.getMonth() + 1)
+    toast.add({ severity: 'success', summary: 'Excel gerado', detail: 'O download foi iniciado.', life: 4000 })
+    exportVisible.value = false
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Erro ao gerar Excel', detail: e.message, life: 6000 })
+    const semDados = e.message?.includes('Sem dados')
+    toast.add({
+      severity: semDados ? 'warn' : 'error',
+      summary: semDados ? 'Nada para exportar' : 'Erro ao gerar Excel',
+      detail: e.message,
+      life: 6000,
+    })
+  } finally {
+    exportando.value = false
   }
 }
 
@@ -155,7 +157,7 @@ onMounted(carregar)
     <h1>Estoque · Farmácia Central</h1>
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
       <Button label="Novo produto" icon="pi pi-plus-circle" severity="secondary" outlined @click="novoProduto" />
-      <Button label="Exportar Excel" icon="pi pi-file-excel" severity="secondary" outlined @click="exportar" />
+      <Button label="Exportar Excel" icon="pi pi-file-excel" severity="secondary" outlined @click="exportVisible = true" />
       <Button label="Entrada" icon="pi pi-plus" severity="success" @click="abrir('entrada')" />
       <Button label="Saída" icon="pi pi-minus" severity="danger" @click="abrir('saida')" />
     </div>
@@ -246,4 +248,19 @@ onMounted(carregar)
   />
   <FichaProduto v-model:visible="fichaVisible" :produto="fichaProduto" />
   <ProdutoDialog v-model:visible="produtoDialogVisible" :produto="produtoEdit" @saved="carregar" />
+
+  <!-- Export Excel: relatório mensal no formato da planilha base -->
+  <Dialog v-model:visible="exportVisible" modal header="Exportar Excel (mensal)" :style="{ width: '26rem' }" :breakpoints="{ '640px': '95vw' }">
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0">
+      Gera um <strong>.xlsx</strong> no formato da planilha base — uma aba por categoria, com estoque inicial, entradas, consumo diário PSM/SAMU, validade e estoque final — para o mês escolhido.
+    </p>
+    <div class="field" style="display: flex; flex-direction: column; gap: 0.4rem">
+      <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted)">Mês de referência</label>
+      <DatePicker v-model="mesExport" view="month" date-format="mm/yy" show-icon class="full" />
+    </div>
+    <template #footer>
+      <Button label="Cancelar" text severity="secondary" :disabled="exportando" @click="exportVisible = false" />
+      <Button label="Gerar Excel" icon="pi pi-download" :loading="exportando" @click="fazerExportMensal" />
+    </template>
+  </Dialog>
 </template>
