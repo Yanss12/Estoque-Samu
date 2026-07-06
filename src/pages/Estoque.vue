@@ -14,6 +14,7 @@ import MovimentacaoDialog from '../components/MovimentacaoDialog.vue'
 import FichaProduto from '../components/FichaProduto.vue'
 import ProdutoDialog from '../components/ProdutoDialog.vue'
 import Paginador from '../components/Paginador.vue'
+import { baixarPlanilhaSimples } from '../lib/relatorioExcel'
 
 const toast = useToast()
 
@@ -30,7 +31,6 @@ const categoriaFiltro = ref(null)
 const first = ref(0)
 const rows = ref(15)
 
-const dt = ref(null)
 const dialogVisible = ref(false)
 const preselect = ref(null)
 const fichaVisible = ref(false)
@@ -122,8 +122,29 @@ function corValidade(produtoId) {
   if (d <= 60) return 'var(--samu-orange)'
   return 'var(--text)'
 }
-function exportar() {
-  dt.value?.exportCSV()
+async function exportar() {
+  try {
+    const rows = linhasFiltradas.value.map((r) => [
+      r.nome,
+      catLabel(r.categoria),
+      r.unidade_medida,
+      r.saldo,
+      r.estoque_minimo,
+      proxValidadeFmt(r.produto_id) || '—',
+    ])
+    const h = new Date()
+    const stamp = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`
+    await baixarPlanilhaSimples(
+      `Estoque_atual_${stamp}.xlsx`,
+      'Estoque',
+      ['Produto', 'Categoria', 'Unidade', 'Saldo', 'Mínimo', 'Próx. validade'],
+      rows,
+      [40, 14, 14, 8, 8, 14]
+    )
+    toast.add({ severity: 'success', summary: 'Excel gerado', detail: 'O download foi iniciado.', life: 3500 })
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Erro ao gerar Excel', detail: e.message, life: 6000 })
+  }
 }
 
 onMounted(carregar)
@@ -134,7 +155,7 @@ onMounted(carregar)
     <h1>Estoque · Farmácia Central</h1>
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
       <Button label="Novo produto" icon="pi pi-plus-circle" severity="secondary" outlined @click="novoProduto" />
-      <Button label="Exportar CSV" icon="pi pi-download" severity="secondary" outlined @click="exportar" />
+      <Button label="Exportar Excel" icon="pi pi-file-excel" severity="secondary" outlined @click="exportar" />
       <Button label="Entrada" icon="pi pi-plus" severity="success" @click="abrir('entrada')" />
       <Button label="Saída" icon="pi pi-minus" severity="danger" @click="abrir('saida')" />
     </div>
@@ -158,7 +179,6 @@ onMounted(carregar)
 
   <div class="card-panel" style="padding: 0.35rem 0.85rem">
   <DataTable
-    ref="dt"
     :value="linhasFiltradas"
     :loading="carregando"
     data-key="produto_id"
@@ -168,7 +188,6 @@ onMounted(carregar)
     removable-sort
     size="small"
     class="tabela-moderna sem-paginador-nativo"
-    export-filename="estoque-samu"
   >
     <template #empty>Nenhum produto encontrado.</template>
 

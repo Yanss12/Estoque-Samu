@@ -18,6 +18,17 @@ function fmtVal(v) {
   return `${d}/${m}/${y}`
 }
 
+// Exporta uma planilha simples (1 aba, tabela) em .xlsx.
+export async function baixarPlanilhaSimples(arquivo, aba, header, linhas, larguras) {
+  const XLSX = await import('xlsx')
+  const ws = XLSX.utils.aoa_to_sheet([header, ...linhas])
+  if (larguras) ws['!cols'] = larguras.map((w) => ({ wch: w }))
+  ws['!freeze'] = { xSplit: 0, ySplit: 1 }
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, aba)
+  XLSX.writeFile(wb, arquivo)
+}
+
 export async function exportarRelatorioMensal(ano, mes) {
   const { data, error } = await supabase.rpc('relatorio_mensal', { p_ano: ano, p_mes: mes })
   if (error) throw error
