@@ -12,6 +12,7 @@ import DatePicker from 'primevue/datepicker'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
+import { ehAdmin } from '../lib/auth'
 import { CATEGORIAS, catLabel } from '../lib/categorias'
 import MovimentacaoDialog from '../components/MovimentacaoDialog.vue'
 import FichaProduto from '../components/FichaProduto.vue'
@@ -182,7 +183,7 @@ onMounted(() => {
         outlined
         @click="baixaVisivel = true"
       />
-      <Button label="Novo produto" icon="pi pi-plus" severity="secondary" outlined @click="novoProduto" />
+      <Button v-if="ehAdmin" label="Novo produto" icon="pi pi-plus" severity="secondary" outlined @click="novoProduto" />
       <Button label="Exportar Excel" icon="pi pi-download" severity="secondary" outlined @click="exportVisible = true" />
       <Button label="Entrada" icon="pi pi-arrow-down" severity="success" @click="abrir('entrada')" />
       <Button label="Saída" icon="pi pi-arrow-up" severity="danger" @click="abrir('saida')" />
@@ -277,7 +278,7 @@ onMounted(() => {
         <div class="acoes">
           <Button icon="pi pi-arrow-down" text rounded severity="secondary" class="acao-entrada" v-tooltip.top="'Entrada'" :aria-label="`Entrada de ${data.nome}`" @click="abrir('entrada', data)" />
           <Button icon="pi pi-arrow-up" text rounded severity="secondary" class="acao-saida" v-tooltip.top="'Saída'" :aria-label="`Saída de ${data.nome}`" @click="abrir('saida', data)" />
-          <Button icon="pi pi-pencil" text rounded severity="secondary" v-tooltip.top="'Editar'" :aria-label="`Editar ${data.nome}`" @click="editarProduto(data)" />
+          <Button v-if="ehAdmin" icon="pi pi-pencil" text rounded severity="secondary" v-tooltip.top="'Editar'" :aria-label="`Editar ${data.nome}`" @click="editarProduto(data)" />
           <Button icon="pi pi-list" text rounded severity="secondary" v-tooltip.top="'Lotes e histórico'" :aria-label="`Lotes e histórico de ${data.nome}`" @click="abrirFicha(data)" />
         </div>
       </template>

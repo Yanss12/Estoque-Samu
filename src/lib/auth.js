@@ -5,6 +5,7 @@ import { supabase } from './supabase'
 export const session = ref(null)
 export const user = ref(null)
 export const perfil = ref(null)
+export const ehAdmin = computed(() => perfil.value?.papel === 'admin')
 
 // True quando o usuário ainda está com a senha padrão (1º acesso) e precisa trocá-la.
 export const precisaTrocarSenha = computed(

@@ -5,6 +5,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
+import { ehAdmin } from '../lib/auth'
 import MovimentacaoDialog from '../components/MovimentacaoDialog.vue'
 import FichaProduto from '../components/FichaProduto.vue'
 import ProdutoDialog from '../components/ProdutoDialog.vue'
@@ -83,7 +84,7 @@ onMounted(carregar)
         outlined
         @click="baixaVisible = true"
       />
-      <Button label="Novo psicotrópico" icon="pi pi-plus" severity="secondary" outlined @click="novoProduto" />
+      <Button v-if="ehAdmin" label="Novo psicotrópico" icon="pi pi-plus" severity="secondary" outlined @click="novoProduto" />
     </div>
   </div>
 
@@ -137,7 +138,7 @@ onMounted(carregar)
         <div class="acoes">
           <Button icon="pi pi-arrow-down" text rounded severity="secondary" class="acao-entrada" v-tooltip.top="'Entrada'" :aria-label="`Entrada de ${data.nome}`" @click="abrir('entrada', data)" />
           <Button icon="pi pi-arrow-up" text rounded severity="secondary" class="acao-saida" v-tooltip.top="'Saída'" :aria-label="`Saída de ${data.nome}`" @click="abrir('saida', data)" />
-          <Button icon="pi pi-pencil" text rounded severity="secondary" v-tooltip.top="'Editar'" :aria-label="`Editar ${data.nome}`" @click="editarProduto(data)" />
+          <Button v-if="ehAdmin" icon="pi pi-pencil" text rounded severity="secondary" v-tooltip.top="'Editar'" :aria-label="`Editar ${data.nome}`" @click="editarProduto(data)" />
           <Button icon="pi pi-list" text rounded severity="secondary" v-tooltip.top="'Lotes e histórico'" :aria-label="`Lotes e histórico de ${data.nome}`" @click="abrirFicha(data)" />
         </div>
       </template>

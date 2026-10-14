@@ -11,7 +11,7 @@ import Textarea from 'primevue/textarea'
 import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
-import { user, perfil } from '../lib/auth'
+import { user, perfil, ehAdmin } from '../lib/auth'
 import { MOTIVOS_ENTRADA, MOTIVOS_SAIDA } from '../lib/movimentacoes'
 import { fmtDataLocal, diasAte } from '../lib/format'
 
@@ -180,14 +180,14 @@ function fechar() {
   emit('update:visible', false)
 }
 // Pergunta sim/não. Resolve true (trocar), false (manter) ou null (cancelar o registro).
-function perguntar(mensagem) {
+function perguntar(mensagem, acceptLabel = 'Trocar validade', rejectLabel = 'Manter a atual') {
   return new Promise((resolve) => {
     confirm.require({
       header: 'Validade diferente',
       message: mensagem,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Trocar validade',
-      rejectLabel: 'Manter a atual',
+      acceptLabel,
+      rejectLabel,
       accept: () => resolve(true),
       reject: () => resolve(false),
       onHide: () => resolve(null),
@@ -313,14 +313,24 @@ async function salvar() {
         lote_id = existente.id
         const novaValidade = dataISO(f.validade)
         if (novaValidade && novaValidade !== existente.validade) {
-          const trocar = await perguntar(
-            `O lote ${existente.numero_lote} já está cadastrado com validade ${fmtDataLocal(existente.validade)}. ` +
-              `Trocar para ${fmtDataLocal(novaValidade)}? Isso vale para todo o saldo desse lote.`
-          )
-          if (trocar === null) return
-          if (trocar) {
-            const { error: eVal } = await supabase.from('lotes').update({ validade: novaValidade }).eq('id', existente.id)
-            if (eVal) throw eVal
+          if (!ehAdmin.value) {
+            const registrar = await perguntar(
+              `Lote ${existente.numero_lote} já cadastrado com validade ${fmtDataLocal(existente.validade)}. ` +
+                'Só o admin corrige a validade. Registrar com a validade atual?',
+              'Registrar com a validade atual',
+              'Cancelar'
+            )
+            if (registrar !== true) return
+          } else {
+            const trocar = await perguntar(
+              `O lote ${existente.numero_lote} já está cadastrado com validade ${fmtDataLocal(existente.validade)}. ` +
+                `Trocar para ${fmtDataLocal(novaValidade)}? Isso vale para todo o saldo desse lote.`
+            )
+            if (trocar === null) return
+            if (trocar) {
+              const { error: eVal } = await supabase.from('lotes').update({ validade: novaValidade }).eq('id', existente.id)
+              if (eVal) throw eVal
+            }
           }
         }
       } else {
