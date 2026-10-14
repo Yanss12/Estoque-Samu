@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
@@ -21,6 +21,30 @@ const toast = useToast()
 const salvando = ref(false)
 const ehEdicao = ref(false)
 const form = ref(novoForm())
+// Estado do produto no banco (só na edição) — o banco aplica as mesmas regras.
+const original = ref(null) // { categoria, ativo }
+const saldoAtual = ref(0)
+const temHistorico = ref(false)
+
+const ehPsico = computed(() => form.value.categoria === 'psicotropico')
+// Regras de categoria (espelham o trigger checa_produto)
+function categoriaBloqueada(c) {
+  if (!ehEdicao.value || !original.value) return null
+  const de = original.value.categoria
+  if (c === de) return null
+  if (saldoAtual.value !== 0 && (de === 'permanente' || c === 'permanente'))
+    return 'Zere o saldo antes de mudar de/para Permanente.'
+  if (de === 'psicotropico' && temHistorico.value) return 'Psicotrópico com histórico não muda de categoria.'
+  return null
+}
+const opcoesCategoria = computed(() =>
+  CATEGORIAS.map((c) => ({ ...c, disabled: !!categoriaBloqueada(c.value) }))
+)
+const avisoCategoria = computed(() => {
+  if (!ehEdicao.value || !original.value) return null
+  return CATEGORIAS.map((c) => categoriaBloqueada(c.value)).find(Boolean) ?? null
+})
+const naoPodeDesativar = computed(() => ehEdicao.value && original.value?.ativo && saldoAtual.value !== 0)
 
 const unidadeOpcoes = [
   'Unidade', 'Ampola', 'Frasco', 'Cartela', 'Par', 'Bisnaga',
@@ -43,11 +67,20 @@ watch(
   () => props.visible,
   async (aberto) => {
     if (!aberto) return
+    original.value = null
+    saldoAtual.value = 0
+    temHistorico.value = false
     if (props.produto) {
       ehEdicao.value = true
       const id = props.produto.id ?? props.produto.produto_id
-      const { data } = await supabase.from('produtos').select('*').eq('id', id).single()
+      const [{ data }, { data: movs }] = await Promise.all([
+        supabase.from('produtos').select('*').eq('id', id).single(),
+        supabase.from('movimentacoes').select('tipo, quantidade').eq('produto_id', id),
+      ])
       form.value = data ? { ...data } : novoForm()
+      original.value = data ? { categoria: data.categoria, ativo: data.ativo } : null
+      temHistorico.value = (movs ?? []).length > 0
+      saldoAtual.value = (movs ?? []).reduce((t, m) => t + (m.tipo === 'entrada' ? m.quantidade : -m.quantidade), 0)
     } else {
       ehEdicao.value = false
       form.value = novoForm()
@@ -124,7 +157,15 @@ async function salvar() {
       <div class="linha-campos">
         <div class="field">
           <label>Categoria</label>
-          <Select v-model="form.categoria" :options="CATEGORIAS" option-label="label" option-value="value" class="full" />
+          <Select
+            v-model="form.categoria"
+            :options="opcoesCategoria"
+            option-label="label"
+            option-value="value"
+            option-disabled="disabled"
+            class="full"
+          />
+          <small v-if="avisoCategoria">{{ avisoCategoria }}</small>
         </div>
         <div class="field">
           <label>Unidade</label>
@@ -140,14 +181,18 @@ async function salvar() {
         </div>
         <div class="field">
           <label>Controlado (psicotrópico)</label>
-          <ToggleSwitch v-model="form.controlado" />
+          <ToggleSwitch v-model="form.controlado" :disabled="ehPsico" />
+          <small v-if="ehPsico">Psicotrópico é sempre controlado.</small>
         </div>
       </div>
 
       <div v-if="ehEdicao" class="field">
         <label>Produto ativo</label>
-        <ToggleSwitch v-model="form.ativo" />
-        <small>Desative para tirar do estoque sem apagar o histórico.</small>
+        <ToggleSwitch v-model="form.ativo" :disabled="naoPodeDesativar" />
+        <small v-if="naoPodeDesativar">
+          Tem {{ saldoAtual }} em estoque. Dê baixa no saldo antes de desativar.
+        </small>
+        <small v-else>Desative para tirar do estoque sem apagar o histórico.</small>
       </div>
     </form>
 

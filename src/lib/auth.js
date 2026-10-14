@@ -34,7 +34,11 @@ async function setSession(s) {
 export async function initAuth() {
   const { data } = await supabase.auth.getSession()
   await setSession(data.session)
-  supabase.auth.onAuthStateChange((_event, s) => setSession(s))
+  // Não chamar o Supabase (await) dentro do callback: o supabase-js trava
+  // (deadlock) principalmente na renovação do token. Adia para fora dele.
+  supabase.auth.onAuthStateChange((_event, s) => {
+    setTimeout(() => setSession(s), 0)
+  })
 }
 
 export function signIn(email, password) {
@@ -45,12 +49,10 @@ export function signOut() {
   return supabase.auth.signOut()
 }
 
-// Troca a senha do usuário logado e marca o perfil como "senha já alterada".
+// Troca a senha do usuário logado. O banco marca perfis.senha_alterada sozinho
+// (trigger em auth.users) — o app não consegue mais escrever esse campo.
 export async function alterarSenha(novaSenha) {
   const { error } = await supabase.auth.updateUser({ password: novaSenha })
   if (error) throw error
-  if (user.value) {
-    await supabase.from('perfis').update({ senha_alterada: true }).eq('id', user.value.id)
-    await loadPerfil()
-  }
+  await loadPerfil()
 }

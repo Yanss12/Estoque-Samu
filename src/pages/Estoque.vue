@@ -70,7 +70,8 @@ async function carregar() {
       supabase.from('saldo_estoque').select('*').order('nome'),
       supabase.from('produtos').select('id, nome, categoria, controlado').order('nome'),
       supabase.from('setores').select('id, nome, grupo').eq('ativo', true).order('nome'),
-      supabase.from('saldo_por_lote').select('produto_id, validade, saldo'),
+      // Só lotes com saldo (os zerados crescem sem parar e estouram o limite de 1000 linhas).
+      supabase.from('saldo_por_lote').select('produto_id, validade, saldo').gt('saldo', 0),
     ])
     if (saldo.error) throw saldo.error
     if (prods.error) throw prods.error
