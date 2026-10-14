@@ -121,23 +121,24 @@ async function salvar() {
         <InputText v-model="form.nome" class="full" placeholder="Ex.: Dipirona 500mg/ml" autofocus />
       </div>
 
-      <div style="display: flex; gap: 0.75rem">
-        <div class="field" style="flex: 1">
+      <div class="linha-campos">
+        <div class="field">
           <label>Categoria</label>
           <Select v-model="form.categoria" :options="CATEGORIAS" option-label="label" option-value="value" class="full" />
         </div>
-        <div class="field" style="flex: 1">
+        <div class="field">
           <label>Unidade</label>
           <Select v-model="form.unidade_medida" :options="unidadeOpcoes" editable class="full" />
         </div>
       </div>
 
-      <div style="display: flex; gap: 0.75rem; align-items: flex-start">
-        <div class="field" style="flex: 1">
+      <div class="linha-campos">
+        <div class="field">
           <label>Estoque mínimo</label>
           <InputNumber v-model="form.estoque_minimo" :min="0" show-buttons class="full" />
+          <small>Abaixo disso o produto aparece como crítico.</small>
         </div>
-        <div class="field" style="flex: 1">
+        <div class="field">
           <label>Controlado (psicotrópico)</label>
           <ToggleSwitch v-model="form.controlado" />
         </div>
@@ -146,13 +147,13 @@ async function salvar() {
       <div v-if="ehEdicao" class="field">
         <label>Produto ativo</label>
         <ToggleSwitch v-model="form.ativo" />
-        <small style="color: var(--text-muted)">Desative para tirar do estoque sem apagar o histórico.</small>
+        <small>Desative para tirar do estoque sem apagar o histórico.</small>
       </div>
     </form>
 
     <template #footer>
       <Button label="Cancelar" text severity="secondary" @click="fechar" :disabled="salvando" />
-      <Button type="submit" form="prodform" :label="ehEdicao ? 'Salvar' : 'Cadastrar'" icon="pi pi-check" :loading="salvando" />
+      <Button type="submit" form="prodform" :label="ehEdicao ? 'Salvar alterações' : 'Cadastrar produto'" :loading="salvando" />
     </template>
   </Dialog>
 </template>

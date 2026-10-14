@@ -16,7 +16,7 @@ const collapsed = ref(false)
 const trocaSenhaVisivel = ref(false)
 
 const nav = [
-  { name: 'dashboard', label: 'Dashboard', icon: 'pi pi-th-large' },
+  { name: 'dashboard', label: 'Visão geral', icon: 'pi pi-th-large' },
   { name: 'estoque', label: 'Estoque', icon: 'pi pi-box' },
   { name: 'movimentacoes', label: 'Movimentações', icon: 'pi pi-arrow-right-arrow-left' },
   { name: 'psicotropicos', label: 'Psicotrópicos', icon: 'pi pi-shield' },
@@ -50,7 +50,7 @@ async function sair() {
         <LogoSamu :size="28" />
         <span>Estoque SAMU</span>
       </div>
-      <nav class="nav">
+      <nav class="nav" aria-label="Principal">
         <router-link
           v-for="item in nav"
           :key="item.name"
@@ -62,16 +62,20 @@ async function sair() {
         </router-link>
       </nav>
       <div class="spacer" />
-      <button class="collapse-btn" @click="collapsed = !collapsed">
+      <button
+        class="collapse-btn"
+        :aria-label="collapsed ? 'Expandir menu' : 'Recolher menu'"
+        :aria-expanded="!collapsed"
+        @click="collapsed = !collapsed"
+      >
         <i :class="collapsed ? 'pi pi-angle-double-right' : 'pi pi-angle-double-left'" />
+        <span>Recolher</span>
       </button>
     </aside>
 
     <div class="main">
       <header class="topbar">
-        <strong style="font-size: 0.95rem; color: var(--text-muted)">
-          Farmácia Central · Controle de Estoque
-        </strong>
+        <span class="local"><strong>Farmácia Central</strong> · estoque único SAMU / PSM</span>
         <div class="right">
           <Button
             :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
@@ -89,6 +93,8 @@ async function sair() {
             icon="pi pi-key"
             label="Senha"
             text
+            size="small"
+            class="rotulo-btn"
             severity="secondary"
             @click="trocaSenhaVisivel = true"
           />
@@ -96,6 +102,8 @@ async function sair() {
             icon="pi pi-sign-out"
             label="Sair"
             text
+            size="small"
+            class="rotulo-btn"
             severity="secondary"
             @click="sair"
           />

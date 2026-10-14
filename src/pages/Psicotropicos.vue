@@ -67,19 +67,22 @@ onMounted(carregar)
 
 <template>
   <div class="page-head">
-    <h1><i class="pi pi-shield" style="color: var(--samu-orange)" /> Psicotrópicos</h1>
-    <Button label="Novo psicotrópico" icon="pi pi-plus-circle" severity="secondary" outlined @click="novoProduto" />
+    <div>
+      <h1>Psicotrópicos</h1>
+      <p class="page-sub">Medicamentos controlados · Portaria 344/98</p>
+    </div>
+    <Button label="Novo psicotrópico" icon="pi pi-plus" severity="secondary" outlined @click="novoProduto" />
   </div>
 
-  <div class="aviso-controlado" style="margin-bottom: 1.25rem">
-    <i class="pi pi-exclamation-triangle" />
+  <div class="aviso-controlado" role="note">
+    <i class="pi pi-shield" aria-hidden="true" />
     <span>
-      <strong>Área de medicamentos controlados (Portaria 344/98).</strong>
-      Toda entrada e saída é registrada com lote e auditoria (quem/quando). Use sempre o lote correto.
+      Toda entrada e saída fica registrada com <strong>lote, usuário e horário</strong>.
+      Confira o número do lote na embalagem antes de registrar.
     </span>
   </div>
 
-  <div class="card-panel" style="padding: 0.35rem 0.85rem">
+  <div class="card-panel tabela">
   <DataTable
     :value="linhas"
     :loading="carregando"
@@ -91,20 +94,32 @@ onMounted(carregar)
     size="small"
     class="tabela-moderna sem-paginador-nativo"
   >
-    <template #empty>Nenhum psicotrópico cadastrado.</template>
-    <Column field="nome" header="Medicamento" sortable />
-    <Column field="unidade_medida" header="Unidade" style="width: 9rem" />
-    <Column field="saldo" header="Saldo" sortable style="width: 8rem">
+    <template #empty>Nenhum psicotrópico cadastrado. Use "Novo psicotrópico" para começar.</template>
+    <Column field="nome" header="Medicamento" sortable>
+      <template #body="{ data }"><span class="prod-nome">{{ data.nome }}</span></template>
+    </Column>
+    <Column field="unidade_medida" header="Unidade" style="width: 8rem" header-class="col-opc" body-class="col-opc">
+      <template #body="{ data }"><span class="cat-texto">{{ data.unidade_medida }}</span></template>
+    </Column>
+    <Column field="saldo" header="Saldo" sortable style="width: 6.5rem" header-class="col-num" body-class="col-num">
       <template #body="{ data }">
-        <span class="saldo-pill" :class="{ baixo: data.abaixo_minimo }">{{ data.saldo }}</span>
+        <span class="saldo" :class="{ baixo: data.abaixo_minimo || data.saldo <= 0 }" :title="data.saldo <= 0 ? 'Sem estoque' : data.abaixo_minimo ? 'Abaixo do mínimo' : null">
+          <i v-if="data.abaixo_minimo" class="pi pi-exclamation-triangle" aria-hidden="true" />{{ data.saldo }}
+        </span>
       </template>
     </Column>
-    <Column header="Ações" style="width: 11rem">
+    <Column field="estoque_minimo" header="Mínimo" sortable style="width: 6.5rem" header-class="col-num col-opc" body-class="col-num col-opc">
+      <template #body="{ data }"><span class="num muted">{{ data.estoque_minimo }}</span></template>
+    </Column>
+    <Column style="width: 9.5rem" header-class="col-num">
+      <template #header><span class="sr-only">Ações</span></template>
       <template #body="{ data }">
-        <Button icon="pi pi-plus" text rounded severity="success" title="Entrada" @click="abrir('entrada', data)" />
-        <Button icon="pi pi-minus" text rounded severity="danger" title="Saída" @click="abrir('saida', data)" />
-        <Button icon="pi pi-pencil" text rounded severity="secondary" title="Editar" @click="editarProduto(data)" />
-        <Button icon="pi pi-eye" text rounded severity="secondary" title="Ficha" @click="abrirFicha(data)" />
+        <div class="acoes">
+          <Button icon="pi pi-arrow-down" text rounded severity="secondary" class="acao-entrada" v-tooltip.top="'Entrada'" :aria-label="`Entrada de ${data.nome}`" @click="abrir('entrada', data)" />
+          <Button icon="pi pi-arrow-up" text rounded severity="secondary" class="acao-saida" v-tooltip.top="'Saída'" :aria-label="`Saída de ${data.nome}`" @click="abrir('saida', data)" />
+          <Button icon="pi pi-pencil" text rounded severity="secondary" v-tooltip.top="'Editar'" :aria-label="`Editar ${data.nome}`" @click="editarProduto(data)" />
+          <Button icon="pi pi-list" text rounded severity="secondary" v-tooltip.top="'Lotes e histórico'" :aria-label="`Lotes e histórico de ${data.nome}`" @click="abrirFicha(data)" />
+        </div>
       </template>
     </Column>
   </DataTable>

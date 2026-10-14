@@ -37,48 +37,47 @@ async function entrar() {
 
 <template>
   <div class="login-wrap">
-    <div class="login-card">
-      <div class="brand">
-        <span style="color: #a1a1aa"><LogoSamu :size="48" /></span>
-        <h1>Estoque SAMU</h1>
-        <span style="color: var(--text-muted); font-size: 0.9rem">
-          Controle de estoque · SAMU / PSM
-        </span>
+    <div class="login-box">
+      <div class="login-brand">
+        <LogoSamu :size="36" />
+        <div>
+          <h1>Estoque SAMU</h1>
+          <p>Farmácia Central · SAMU / PSM</p>
+        </div>
       </div>
 
-      <form @submit.prevent="entrar">
-        <div class="field">
-          <label for="email">E-mail</label>
-          <InputText
-            id="email"
-            v-model="email"
-            type="email"
-            autocomplete="username"
-            placeholder="voce@exemplo.com"
-            class="full"
-            autofocus
-          />
-        </div>
-        <div class="field">
-          <label for="senha">Senha</label>
-          <Password
-            id="senha"
-            v-model="senha"
-            :feedback="false"
-            toggle-mask
-            autocomplete="current-password"
-            input-class="full"
-            class="full"
-          />
-        </div>
-        <Button
-          type="submit"
-          label="Entrar"
-          icon="pi pi-sign-in"
-          class="full"
-          :loading="loading"
-        />
-      </form>
+      <div class="login-card">
+        <h2>Entrar</h2>
+        <form @submit.prevent="entrar">
+          <div class="field">
+            <label for="email">E-mail</label>
+            <InputText
+              id="email"
+              v-model="email"
+              type="email"
+              autocomplete="username"
+              placeholder="seu e-mail"
+              class="full"
+              autofocus
+            />
+          </div>
+          <div class="field">
+            <label for="senha">Senha</label>
+            <Password
+              v-model="senha"
+              input-id="senha"
+              :feedback="false"
+              toggle-mask
+              autocomplete="current-password"
+              input-class="full"
+              class="full"
+            />
+          </div>
+          <Button type="submit" label="Entrar" class="full" :loading="loading" style="margin-top: 0.25rem" />
+        </form>
+      </div>
+
+      <p class="login-rodape">Esqueceu a senha? Peça ao administrador para redefinir.</p>
     </div>
   </div>
 </template>

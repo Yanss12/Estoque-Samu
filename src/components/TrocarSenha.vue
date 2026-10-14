@@ -108,7 +108,6 @@ async function sair() {
         <Button
           type="submit"
           label="Salvar senha"
-          icon="pi pi-check"
           :loading="salvando"
           :disabled="!podeSalvar"
         />
@@ -135,8 +134,9 @@ async function sair() {
   border-radius: 0.7rem;
   display: grid;
   place-items: center;
-  background: var(--samu-blue, #27272a);
-  color: #fff;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
   font-size: 1.1rem;
 }
 .troca-head h2 {
@@ -155,14 +155,7 @@ async function sair() {
   gap: 1rem;
 }
 .field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.field label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-muted);
+  margin-bottom: 0;
 }
 .troca-form :deep(.p-password) {
   width: 100%;

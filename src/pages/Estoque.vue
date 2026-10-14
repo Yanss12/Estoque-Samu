@@ -121,13 +121,13 @@ function proxValidadeFmt(produtoId) {
   if (!v) return null
   return parseData(v).toLocaleDateString('pt-BR')
 }
-// Cor por urgência: vencido = vermelho, ≤60d = laranja, senão texto normal.
-function corValidade(produtoId) {
+// Urgência: vencido = vermelho, ≤60d = âmbar, senão texto normal.
+function classeValidade(produtoId) {
   const d = diasParaVencer(produtoId)
-  if (d === null) return 'var(--text-muted)'
-  if (d < 0) return 'var(--samu-red)'
-  if (d <= 60) return 'var(--samu-orange)'
-  return 'var(--text)'
+  if (d === null) return ''
+  if (d < 0) return 'vencido'
+  if (d <= 60) return 'proximo'
+  return ''
 }
 async function fazerExportMensal() {
   exportando.value = true
@@ -154,32 +154,36 @@ onMounted(carregar)
 
 <template>
   <div class="page-head">
-    <h1>Estoque · Farmácia Central</h1>
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
-      <Button label="Novo produto" icon="pi pi-plus-circle" severity="secondary" outlined @click="novoProduto" />
-      <Button label="Exportar Excel" icon="pi pi-file-excel" severity="secondary" outlined @click="exportVisible = true" />
-      <Button label="Entrada" icon="pi pi-plus" severity="success" @click="abrir('entrada')" />
-      <Button label="Saída" icon="pi pi-minus" severity="danger" @click="abrir('saida')" />
+    <div>
+      <h1>Estoque</h1>
+      <p class="page-sub">Farmácia central · saldo atual e próxima validade de cada produto</p>
+    </div>
+    <div class="page-acoes">
+      <Button label="Novo produto" icon="pi pi-plus" severity="secondary" outlined @click="novoProduto" />
+      <Button label="Exportar Excel" icon="pi pi-download" severity="secondary" outlined @click="exportVisible = true" />
+      <Button label="Entrada" icon="pi pi-arrow-down" severity="success" @click="abrir('entrada')" />
+      <Button label="Saída" icon="pi pi-arrow-up" severity="danger" @click="abrir('saida')" />
     </div>
   </div>
 
   <div class="toolbar">
     <IconField class="grow">
       <InputIcon class="pi pi-search" />
-      <InputText v-model="busca" placeholder="Buscar produto..." class="full" />
+      <InputText v-model="busca" placeholder="Buscar produto pelo nome" aria-label="Buscar produto" class="full" />
     </IconField>
     <Select
       v-model="categoriaFiltro"
       :options="CATEGORIAS"
       option-label="label"
       option-value="value"
-      placeholder="Categoria"
+      placeholder="Todas as categorias"
+      aria-label="Filtrar por categoria"
       show-clear
-      style="min-width: 12rem"
+      style="min-width: 13rem"
     />
   </div>
 
-  <div class="card-panel" style="padding: 0.35rem 0.85rem">
+  <div class="card-panel tabela">
   <DataTable
     :value="linhasFiltradas"
     :loading="carregando"
@@ -191,42 +195,61 @@ onMounted(carregar)
     size="small"
     class="tabela-moderna sem-paginador-nativo"
   >
-    <template #empty>Nenhum produto encontrado.</template>
+    <template #empty>
+      {{ busca || categoriaFiltro ? 'Nenhum produto corresponde à busca.' : 'Nenhum produto cadastrado. Use "Novo produto" para começar.' }}
+    </template>
 
-    <Column field="nome" header="Produto" sortable />
-    <Column field="categoria" header="Categoria" sortable style="width: 11rem">
+    <Column field="nome" header="Produto" sortable>
       <template #body="{ data }">
-        <span class="cat-pill" :class="{ controlado: data.controlado }">{{ catLabel(data.categoria) }}</span>
-      </template>
-    </Column>
-    <Column field="unidade_medida" header="Unidade" sortable style="width: 8rem" />
-    <Column field="saldo" header="Saldo" sortable style="width: 8rem">
-      <template #body="{ data }">
-        <span class="saldo-pill" :class="{ baixo: data.abaixo_minimo }">
-          <i v-if="data.abaixo_minimo" class="pi pi-exclamation-triangle" />{{ data.saldo }}
+        <span class="prod-nome">
+          {{ data.nome }}
+          <span v-if="data.controlado" class="tag-controlado">Controlado</span>
         </span>
       </template>
     </Column>
-    <Column field="estoque_minimo" header="Mínimo" sortable style="width: 7rem" />
-    <Column header="Próx. validade" style="width: 11rem">
+    <Column field="categoria" header="Categoria" sortable style="width: 9.5rem" header-class="col-opc" body-class="col-opc">
       <template #body="{ data }">
-        <template v-if="proxValidadeFmt(data.produto_id)">
-          <span :style="{ color: corValidade(data.produto_id), fontWeight: diasParaVencer(data.produto_id) <= 60 ? 600 : 500 }">
-            <i class="pi pi-hourglass" style="margin-right: 0.3rem; font-size: 0.8rem" />
-            {{ proxValidadeFmt(data.produto_id) }}
-            <small v-if="diasParaVencer(data.produto_id) < 0"> · vencido</small>
-            <small v-else-if="diasParaVencer(data.produto_id) <= 60"> · {{ diasParaVencer(data.produto_id) }}d</small>
-          </span>
-        </template>
-        <span v-else style="color: var(--text-muted)" title="Sem lote com validade">—</span>
+        <span class="cat-texto">{{ catLabel(data.categoria) }}</span>
       </template>
     </Column>
-    <Column header="Ações" style="width: 11rem">
+    <Column field="unidade_medida" header="Unidade" sortable style="width: 7.5rem" header-class="col-opc" body-class="col-opc">
       <template #body="{ data }">
-        <Button icon="pi pi-plus" text rounded severity="success" title="Entrada" @click="abrir('entrada', data)" />
-        <Button icon="pi pi-minus" text rounded severity="danger" title="Saída" @click="abrir('saida', data)" />
-        <Button icon="pi pi-pencil" text rounded severity="secondary" title="Editar" @click="editarProduto(data)" />
-        <Button icon="pi pi-eye" text rounded severity="secondary" title="Ficha" @click="abrirFicha(data)" />
+        <span class="cat-texto">{{ data.unidade_medida }}</span>
+      </template>
+    </Column>
+    <Column field="saldo" header="Saldo" sortable style="width: 6.5rem" header-class="col-num" body-class="col-num">
+      <template #body="{ data }">
+        <span class="saldo" :class="{ baixo: data.abaixo_minimo || data.saldo <= 0 }" :title="data.saldo <= 0 ? 'Sem estoque' : data.abaixo_minimo ? 'Abaixo do mínimo' : null">
+          <i v-if="data.abaixo_minimo" class="pi pi-exclamation-triangle" aria-hidden="true" />{{ data.saldo }}
+        </span>
+      </template>
+    </Column>
+    <Column field="estoque_minimo" header="Mínimo" sortable style="width: 6.5rem" header-class="col-num col-opc" body-class="col-num col-opc">
+      <template #body="{ data }">
+        <span class="num muted">{{ data.estoque_minimo }}</span>
+      </template>
+    </Column>
+    <Column header="Próx. validade" style="width: 10.5rem">
+      <template #body="{ data }">
+        <span
+          v-if="proxValidadeFmt(data.produto_id)"
+          class="validade"
+          :class="classeValidade(data.produto_id)"
+        >
+          {{ proxValidadeFmt(data.produto_id) }}<small v-if="diasParaVencer(data.produto_id) < 0">vencido</small><small v-else-if="diasParaVencer(data.produto_id) <= 60">{{ diasParaVencer(data.produto_id) }}d</small>
+        </span>
+        <span v-else class="muted" title="Sem lote com validade">—</span>
+      </template>
+    </Column>
+    <Column style="width: 9.5rem" header-class="col-num">
+      <template #header><span class="sr-only">Ações</span></template>
+      <template #body="{ data }">
+        <div class="acoes">
+          <Button icon="pi pi-arrow-down" text rounded severity="secondary" class="acao-entrada" v-tooltip.top="'Entrada'" :aria-label="`Entrada de ${data.nome}`" @click="abrir('entrada', data)" />
+          <Button icon="pi pi-arrow-up" text rounded severity="secondary" class="acao-saida" v-tooltip.top="'Saída'" :aria-label="`Saída de ${data.nome}`" @click="abrir('saida', data)" />
+          <Button icon="pi pi-pencil" text rounded severity="secondary" v-tooltip.top="'Editar'" :aria-label="`Editar ${data.nome}`" @click="editarProduto(data)" />
+          <Button icon="pi pi-list" text rounded severity="secondary" v-tooltip.top="'Lotes e histórico'" :aria-label="`Lotes e histórico de ${data.nome}`" @click="abrirFicha(data)" />
+        </div>
       </template>
     </Column>
   </DataTable>
@@ -250,13 +273,13 @@ onMounted(carregar)
   <ProdutoDialog v-model:visible="produtoDialogVisible" :produto="produtoEdit" @saved="carregar" />
 
   <!-- Export Excel: relatório mensal no formato da planilha base -->
-  <Dialog v-model:visible="exportVisible" modal header="Exportar Excel (mensal)" :style="{ width: '26rem' }" :breakpoints="{ '640px': '95vw' }">
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0">
+  <Dialog v-model:visible="exportVisible" modal header="Exportar relatório mensal" :style="{ width: '26rem' }" :breakpoints="{ '640px': '95vw' }">
+    <p class="muted" style="font-size: 0.875rem; margin-top: 0; line-height: 1.5">
       Gera um <strong>.xlsx</strong> no formato da planilha base — uma aba por categoria, com estoque inicial, entradas, consumo diário PSM/SAMU, validade e estoque final — para o mês escolhido.
     </p>
-    <div class="field" style="display: flex; flex-direction: column; gap: 0.4rem">
-      <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted)">Mês de referência</label>
-      <DatePicker v-model="mesExport" view="month" date-format="mm/yy" show-icon class="full" />
+    <div class="field">
+      <label for="mes-export">Mês de referência</label>
+      <DatePicker v-model="mesExport" input-id="mes-export" view="month" date-format="mm/yy" show-icon class="full" />
     </div>
     <template #footer>
       <Button label="Cancelar" text severity="secondary" :disabled="exportando" @click="exportVisible = false" />

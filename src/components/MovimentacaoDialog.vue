@@ -271,10 +271,10 @@ async function salvar() {
     :breakpoints="{ '640px': '95vw' }"
   >
     <div v-if="ehControlado" class="aviso-controlado">
-      <i class="pi pi-shield" />
+      <i class="pi pi-shield" aria-hidden="true" />
       <span>
-        <strong>Medicamento controlado (Portaria 344/98).</strong>
-        Registrado sob auditoria de <strong>{{ perfil?.nome || user?.email }}</strong>. Informe o lote.
+        <strong>Controlado (Portaria 344/98).</strong>
+        Fica registrado em nome de <strong>{{ perfil?.nome || user?.email }}</strong>. Confira o lote.
       </span>
     </div>
 
@@ -298,8 +298,8 @@ async function salvar() {
         />
       </div>
 
-      <div style="display: flex; gap: 0.75rem">
-        <div class="field" style="flex: 1">
+      <div class="linha-campos">
+        <div class="field">
           <label>{{ form.tipo === 'entrada' ? 'Origem' : 'Tipo de saída' }}</label>
           <Select v-model="form.motivo" :options="motivoOpcoes" option-label="label" option-value="value" class="full" />
         </div>
@@ -326,10 +326,10 @@ async function salvar() {
       <!-- Saída multi-lote: informa quanto sai de cada lote (FEFO sugerido na ordem) -->
       <div v-if="usaDistribuicao" class="field">
         <label>
-          Quanto sai de cada lote * <span style="color: var(--text-muted); font-weight: 400">(primeiro a vencer no topo)</span>
+          Quanto sai de cada lote <span class="opc">· primeiro a vencer no topo</span>
         </label>
-        <div v-if="!lotesDisponiveis.length" style="color: var(--text-muted); padding: 0.4rem 0">
-          Este produto não tem lote com saldo.
+        <div v-if="!lotesDisponiveis.length" class="empty" style="padding: 0.4rem 0">
+          Este produto não tem lote com saldo. Registre uma entrada primeiro.
         </div>
         <div v-else class="lotes-lista">
           <div v-for="l in lotesDisponiveis" :key="l.lote_id" class="lote-row">
@@ -352,14 +352,15 @@ async function salvar() {
             />
           </div>
           <div class="lote-total">
-            Total: <strong>{{ totalDistribuido }}</strong> / disponível {{ saldoTotalDoProduto }}
+            <span>Total da saída</span>
+            <span><strong>{{ totalDistribuido }}</strong> de {{ saldoTotalDoProduto }} disponíveis</span>
           </div>
         </div>
       </div>
 
       <!-- Saída sem lote (permanente): mantém Select simples -->
       <div v-else-if="form.tipo === 'saida'" class="field">
-        <label>Lote (opcional)</label>
+        <label>Lote <span class="opc">(opcional)</span></label>
         <Select
           v-model="form.lote_id"
           :options="lotesDisponiveis"
@@ -372,26 +373,32 @@ async function salvar() {
       </div>
 
       <!-- Entrada: reaproveita/cria lote -->
-      <div v-else style="display: flex; gap: 0.75rem">
-        <div class="field" style="flex: 1">
-          <label>Lote{{ loteObrigatorio ? ' *' : ' (opcional)' }}</label>
-          <InputText v-model="form.numero_lote" placeholder="Nº do lote" class="full" />
+      <div v-else class="linha-campos">
+        <div class="field">
+          <label>Lote <span v-if="!loteObrigatorio" class="opc">(opcional)</span></label>
+          <InputText v-model="form.numero_lote" placeholder="Como está na embalagem" class="full" />
         </div>
-        <div class="field" style="flex: 1">
-          <label>Validade{{ loteObrigatorio ? ' *' : ' (opcional)' }}</label>
+        <div class="field">
+          <label>Validade <span v-if="!loteObrigatorio" class="opc">(opcional)</span></label>
           <DatePicker v-model="form.validade" date-format="dd/mm/yy" show-icon class="full" />
         </div>
       </div>
 
       <div class="field">
-        <label>Observação (opcional)</label>
+        <label>Observação <span class="opc">(opcional)</span></label>
         <Textarea v-model="form.observacao" rows="2" auto-resize class="full" />
       </div>
     </form>
 
     <template #footer>
       <Button label="Cancelar" text severity="secondary" @click="fechar" :disabled="salvando" />
-      <Button type="submit" form="movform" label="Registrar" icon="pi pi-check" :loading="salvando" />
+      <Button
+        type="submit"
+        form="movform"
+        :label="form.tipo === 'entrada' ? 'Registrar entrada' : 'Registrar saída'"
+        :severity="form.tipo === 'entrada' ? 'success' : 'danger'"
+        :loading="salvando"
+      />
     </template>
   </Dialog>
 </template>

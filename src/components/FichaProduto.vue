@@ -3,9 +3,9 @@ import { ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import Tag from 'primevue/tag'
 import { supabase } from '../lib/supabase'
 import { fetchPerfisMap } from '../lib/perfis'
+import { motivoLabel } from '../lib/movimentacoes'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -69,47 +69,41 @@ function autor(m) {
     :style="{ width: '42rem' }"
     :breakpoints="{ '640px': '95vw' }"
   >
-    <h3 style="margin: 0 0 0.5rem">Lotes com saldo</h3>
-    <DataTable :value="lotes" :loading="carregando" size="small">
-      <template #empty>Sem lotes cadastrados.</template>
+    <h3 class="ficha-sec">Lotes com saldo <span class="muted" style="font-weight: 400">primeiro a vencer no topo</span></h3>
+    <DataTable :value="lotes" :loading="carregando" size="small" class="tabela-moderna">
+      <template #empty>Nenhum lote com saldo.</template>
       <Column header="Lote">
         <template #body="{ data }">
-          <span class="mono">{{ data.numero_lote || '—' }}</span>
+          <span class="mono">{{ data.numero_lote || 'sem nº' }}</span>
         </template>
       </Column>
       <Column header="Validade">
         <template #body="{ data }">
-          <span class="mono">{{ fmtData(data.validade) }}</span>
+          <span class="num">{{ fmtData(data.validade) }}</span>
         </template>
       </Column>
-      <Column field="saldo" header="Saldo" />
+      <Column header="Saldo" header-class="col-num" body-class="col-num">
+        <template #body="{ data }"><span class="saldo">{{ data.saldo }}</span></template>
+      </Column>
     </DataTable>
 
-    <h3 style="margin: 1.25rem 0 0.5rem">
-      Últimas movimentações
-      <span style="font-weight: 400; color: var(--text-muted); font-size: 0.85rem">(10 mais recentes)</span>
-    </h3>
-    <DataTable :value="movs" :loading="carregando" size="small">
-      <template #empty>Sem movimentações.</template>
+    <h3 class="ficha-sec">Últimas movimentações <span class="muted" style="font-weight: 400">10 mais recentes</span></h3>
+    <DataTable :value="movs" :loading="carregando" size="small" class="tabela-moderna">
+      <template #empty>Nenhuma movimentação deste produto.</template>
       <Column header="Data">
-        <template #body="{ data }">{{ fmtData(data.data) }}</template>
+        <template #body="{ data }"><span class="num">{{ fmtData(data.data) }}</span></template>
       </Column>
       <Column header="Tipo">
         <template #body="{ data }">
-          <Tag
-            :value="data.tipo === 'entrada' ? 'Entrada' : 'Saída'"
-            :severity="data.tipo === 'entrada' ? 'success' : 'danger'"
-          />
+          <span class="saldo" :style="{ color: data.tipo === 'entrada' ? 'var(--ok-fg)' : 'var(--danger-fg)' }">
+            {{ data.tipo === 'entrada' ? '+' : '−' }}{{ data.quantidade }}
+          </span>
         </template>
       </Column>
-      <Column field="quantidade" header="Qtd" />
-      <Column header="Destino">
-        <template #body="{ data }">{{ data.setor?.nome || '—' }}</template>
-      </Column>
-      <Column field="motivo" header="Motivo" />
-      <Column header="Obs.">
+      <Column header="Motivo">
         <template #body="{ data }">
-          <span style="font-size: 0.85rem; color: var(--text-muted)">{{ data.observacao || '—' }}</span>
+          {{ motivoLabel(data.motivo) }}<span v-if="data.setor?.nome" class="muted"> → {{ data.setor.nome }}</span>
+          <div v-if="data.observacao" class="muted" style="font-size: 0.8rem">{{ data.observacao }}</div>
         </template>
       </Column>
       <Column header="Por">

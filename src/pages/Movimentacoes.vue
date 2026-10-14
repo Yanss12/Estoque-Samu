@@ -5,6 +5,7 @@ import Select from 'primevue/select'
 import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
 import Paginador from '../components/Paginador.vue'
+import ListaMovimentacoes from '../components/ListaMovimentacoes.vue'
 import { supabase } from '../lib/supabase'
 import { motivoLabel } from '../lib/movimentacoes'
 import { catLabel } from '../lib/categorias'
@@ -147,21 +148,6 @@ watch([tipoFiltro, produtoFiltro, setorFiltro, periodo, rows], () => {
 })
 watch(first, carregar)
 
-function autor(m) {
-  return perfisMap.value[m.usuario_id] || 'usuário removido'
-}
-function subtitulo(m) {
-  const t = m.tipo === 'entrada' ? 'Entrada' : 'Saída'
-  let s =
-    m.motivo === 'liberacao' && m.setor?.nome
-      ? `${t} · Liberação → ${m.setor.nome}`
-      : `${t} · ${motivoLabel(m.motivo)}`
-  if (m.lote?.numero_lote) s += ` · lote ${m.lote.numero_lote}`
-  return s
-}
-function ehAvariado(m) {
-  return m.tipo === 'saida' && m.motivo === 'avariado'
-}
 function fmt(d) {
   return d
     ? new Date(d).toLocaleString('pt-BR', {
@@ -189,22 +175,23 @@ onMounted(async () => {
 
 <template>
   <div class="page-head">
-    <h1>Movimentações</h1>
-    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap">
-      <span style="color: var(--text-muted); font-size: 0.9rem">Trilha de auditoria — entradas e saídas</span>
-      <Button label="Exportar Excel" icon="pi pi-file-excel" severity="secondary" outlined :loading="exportando" @click="exportarMovimentacoes" />
+    <div>
+      <h1>Movimentações</h1>
+      <p class="page-sub">Trilha de auditoria de entradas e saídas, da mais recente para a mais antiga</p>
     </div>
+    <Button label="Exportar Excel" icon="pi pi-download" severity="secondary" outlined :loading="exportando" @click="exportarMovimentacoes" />
   </div>
 
-  <div class="toolbar" style="flex-wrap: wrap">
+  <div class="toolbar">
     <Select
       v-model="tipoFiltro"
       :options="tipoOpcoes"
       option-label="label"
       option-value="value"
-      placeholder="Tipo"
+      placeholder="Entradas e saídas"
+      aria-label="Filtrar por tipo"
       show-clear
-      style="min-width: 9rem"
+      style="min-width: 11rem"
     />
     <Select
       v-model="produtoFiltro"
@@ -212,7 +199,8 @@ onMounted(async () => {
       option-label="nome"
       option-value="id"
       filter
-      placeholder="Produto"
+      placeholder="Todos os produtos"
+      aria-label="Filtrar por produto"
       show-clear
       style="min-width: 15rem"
     />
@@ -221,23 +209,25 @@ onMounted(async () => {
       :options="setores"
       option-label="nome"
       option-value="id"
-      placeholder="Setor"
+      placeholder="Todos os setores"
+      aria-label="Filtrar por setor"
       show-clear
-      style="min-width: 10rem"
+      style="min-width: 11rem"
     />
     <DatePicker
       v-model="periodo"
       selection-mode="range"
       :manual-input="false"
       date-format="dd/mm/yy"
-      placeholder="Período"
+      placeholder="Qualquer data"
+      aria-label="Filtrar por período"
       show-icon
       show-button-bar
       style="min-width: 15rem"
     />
     <Button
       v-if="temFiltro"
-      label="Limpar"
+      label="Limpar filtros"
       icon="pi pi-filter-slash"
       text
       severity="secondary"
@@ -245,38 +235,26 @@ onMounted(async () => {
     />
   </div>
 
-  <div class="card-panel">
-    <div v-if="movs.length" class="feed">
-      <div v-for="m in movs" :key="m.id" class="feed-row">
-        <span class="feed-chip" :class="m.tipo === 'entrada' ? 'in' : 'out'">
-          <i :class="m.tipo === 'entrada' ? 'pi pi-arrow-down-left' : ehAvariado(m) ? 'pi pi-exclamation-triangle' : 'pi pi-arrow-up-right'" />
-        </span>
-        <div class="feed-main">
-          <div class="feed-title">
-            {{ m.produto?.nome || '—' }}
-            <span v-if="m.produto?.controlado" class="pill-controlado">controlado</span>
-          </div>
-          <div class="feed-sub">
-            {{ subtitulo(m) }}
-            <span class="feed-autor"><i class="pi pi-user" /> {{ autor(m) }}</span>
-          </div>
-          <div v-if="m.observacao" class="feed-obs">
-            <i class="pi pi-comment" /> {{ m.observacao }}
-          </div>
-        </div>
-        <div class="feed-right">
-          <div class="feed-qty" :class="m.tipo === 'entrada' ? 'in' : 'out'">
-            {{ m.tipo === 'entrada' ? '+' : '−' }}{{ m.quantidade }}
-          </div>
-          <div class="feed-time">{{ fmt(m.data) }}</div>
-        </div>
-      </div>
-    </div>
-    <div v-else class="empty" style="padding: 0.5rem 0">
-      {{ carregando ? 'Carregando...' : temFiltro ? 'Nenhuma movimentação para os filtros escolhidos.' : 'Nenhuma movimentação registrada ainda.' }}
-    </div>
+  <div class="card-panel" :aria-busy="carregando">
+    <ul v-if="carregando && !movs.length" class="lista" aria-hidden="true">
+      <li v-for="n in 8" :key="n"><span class="skel" style="width: 45%" /><span class="skel" style="width: 4rem" /></li>
+    </ul>
+    <ListaMovimentacoes
+      v-else-if="movs.length"
+      :movs="movs"
+      :perfis-map="perfisMap"
+      tempo="absoluto"
+      detalhado
+      :style="{ opacity: carregando ? 0.55 : 1, transition: 'opacity 0.15s' }"
+    />
+    <p v-else class="empty" style="margin: 0.25rem 0">
+      <template v-if="temFiltro">
+        Nenhuma movimentação para esses filtros.
+        <a href="#" class="ver-todas" style="display: inline" @click.prevent="limparFiltros">Limpar filtros</a>
+      </template>
+      <template v-else>Nenhuma movimentação registrada ainda.</template>
+    </p>
 
-    <!-- Paginação -->
     <Paginador
       v-model:first="first"
       v-model:rows="rows"
