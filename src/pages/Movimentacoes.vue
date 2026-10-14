@@ -6,6 +6,7 @@ import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
 import Paginador from '../components/Paginador.vue'
 import ListaMovimentacoes from '../components/ListaMovimentacoes.vue'
+import EstornoDialog from '../components/EstornoDialog.vue'
 import { supabase } from '../lib/supabase'
 import { motivoLabel } from '../lib/movimentacoes'
 import { catLabel } from '../lib/categorias'
@@ -18,6 +19,13 @@ const perfisMap = ref({})
 const produtos = ref([])
 const setores = ref([])
 const carregando = ref(false)
+const estornadas = ref(new Set())
+const estornoVisivel = ref(false)
+const estornoMov = ref(null)
+function abrirEstorno(m) {
+  estornoMov.value = m
+  estornoVisivel.value = true
+}
 
 // Filtros
 const tipoFiltro = ref(null)
@@ -49,7 +57,7 @@ async function exportarMovimentacoes() {
       let q = supabase
         .from('movimentacoes')
         .select(
-          'tipo, quantidade, motivo, observacao, data, usuario_id, produto:produtos(nome, categoria), setor:setores(nome), lote:lotes(numero_lote)'
+          'tipo, quantidade, motivo, observacao, data, usuario_id, estorno_de, produto:produtos(nome, categoria), setor:setores(nome), lote:lotes(numero_lote)'
         )
         .order('data', { ascending: false })
       if (tipoFiltro.value) q = q.eq('tipo', tipoFiltro.value)
@@ -71,7 +79,7 @@ async function exportarMovimentacoes() {
       fmt(m.data),
       m.produto?.nome || '',
       m.produto?.categoria ? catLabel(m.produto.categoria) : '',
-      m.tipo === 'entrada' ? 'Entrada' : 'Saída',
+      (m.tipo === 'entrada' ? 'Entrada' : 'Saída') + (m.estorno_de ? ' (estorno)' : ''),
       m.quantidade,
       m.lote?.numero_lote || '',
       m.setor?.nome || '',
@@ -112,7 +120,7 @@ async function carregar() {
   let q = supabase
     .from('movimentacoes')
     .select(
-      'id, tipo, quantidade, motivo, observacao, data, usuario_id, produto:produtos(nome, controlado), setor:setores(nome), lote:lotes(numero_lote)',
+      'id, tipo, quantidade, motivo, observacao, data, usuario_id, produto_id, lote_id, setor_id, estorno_de, produto:produtos(nome, controlado), setor:setores(nome), lote:lotes(numero_lote)',
       { count: 'exact' }
     )
     .order('data', { ascending: false })
@@ -130,6 +138,12 @@ async function carregar() {
   else {
     movs.value = data ?? []
     total.value = count ?? 0
+    // Quais destas já foram estornadas (o estorno pode estar em outra página).
+    const ids = movs.value.map((m) => m.id)
+    const { data: est } = ids.length
+      ? await supabase.from('movimentacoes').select('estorno_de').in('estorno_de', ids)
+      : { data: [] }
+    estornadas.value = new Set((est ?? []).map((e) => e.estorno_de))
   }
   carregando.value = false
 }
@@ -245,6 +259,9 @@ onMounted(async () => {
       :perfis-map="perfisMap"
       tempo="absoluto"
       detalhado
+      estornavel
+      :estornadas="estornadas"
+      @estornar="abrirEstorno"
       :style="{ opacity: carregando ? 0.55 : 1, transition: 'opacity 0.15s' }"
     />
     <p v-else class="empty" style="margin: 0.25rem 0">
@@ -262,4 +279,6 @@ onMounted(async () => {
       :disabled="carregando"
     />
   </div>
+
+  <EstornoDialog v-model:visible="estornoVisivel" :mov="estornoMov" @saved="carregar" />
 </template>

@@ -659,6 +659,58 @@ a.resumo-item:focus-visible {
   margin-top: 1px;
 }
 
+/* Estorno */
+.feed-row.com-acao {
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto 2rem;
+}
+.feed-acao {
+  display: flex;
+  justify-content: flex-end;
+}
+.feed-acao .p-button.p-button-icon-only {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+}
+.feed-dir.estorno {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+.feed-qty.estorno {
+  color: var(--text-muted);
+}
+.feed-estornada .feed-qty {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+.feed-estornada .feed-title {
+  color: var(--text-muted);
+}
+.tag-estorno {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.estorno-resumo {
+  padding: 0.65rem 0.85rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.estorno-efeito {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0.85rem 0 1rem;
+}
+
 /* Marcador de controlado (texto, não pílula colorida em toda linha) */
 .tag-controlado {
   display: inline-flex;
@@ -766,6 +818,14 @@ a.resumo-item:focus-visible {
   font-size: 0.75rem;
 }
 
+.saldo-vencido {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--danger-fg);
+  white-space: nowrap;
+}
+
 /* Validade */
 .validade {
   font-variant-numeric: tabular-nums;
@@ -865,6 +925,22 @@ a.resumo-item:focus-visible {
   min-width: 0;
 }
 
+/* Quantidade total com distribuição FEFO automática */
+.qtd-fefo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+.qtd-fefo .p-inputnumber {
+  width: 9rem;
+  flex-shrink: 0;
+}
+.qtd-fefo .muted {
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
 /* Distribuição manual por lote no diálogo de saída */
 .lotes-lista {
   display: flex;
@@ -899,6 +975,30 @@ a.resumo-item:focus-visible {
 }
 .lote-row .p-inputnumber {
   width: auto;
+}
+.lote-num {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.tag-vencido {
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+}
+.lote-vencido .lote-meta {
+  color: var(--danger-fg);
+}
+.lote-bloqueado {
+  background: var(--surface-2);
+}
+.lote-bloqueado .lote-num .mono {
+  text-decoration: line-through;
+  color: var(--text-muted);
 }
 .lote-total {
   display: flex;

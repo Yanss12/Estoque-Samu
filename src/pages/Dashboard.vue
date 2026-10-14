@@ -34,7 +34,7 @@ async function carregar() {
       .limit(8),
     supabase
       .from('movimentacoes')
-      .select('id, tipo, quantidade, motivo, data, usuario_id, produto:produtos(nome, controlado), setor:setores(nome)')
+      .select('id, tipo, quantidade, motivo, data, usuario_id, estorno_de, produto:produtos(nome, controlado), setor:setores(nome)')
       .order('data', { ascending: false })
       .limit(8),
     fetchPerfisMap(),
@@ -71,6 +71,7 @@ function pct(c) {
   return Math.max(2, Math.min(100, Math.round((c.saldo / c.estoque_minimo) * 100)))
 }
 
+const temVencido = computed(() => vencendo.value.some((v) => dias(v.validade) < 0))
 const tudoOk = computed(() => !carregando.value && !totalCriticos.value && !totalVencendo.value)
 
 onMounted(carregar)
@@ -137,6 +138,11 @@ onMounted(carregar)
           Validade
           <span v-if="totalVencendo > vencendo.length" class="conta">{{ vencendo.length }} de {{ totalVencendo }}</span>
         </h2>
+        <RouterLink
+          v-if="temVencido"
+          class="ver-todas"
+          :to="{ name: 'estoque', query: { baixa: '1' } }"
+        >Dar baixa nos vencidos <i class="pi pi-arrow-right" /></RouterLink>
       </div>
       <ul v-if="carregando" class="lista" aria-hidden="true">
         <li v-for="n in 4" :key="n"><span class="skel" style="width: 55%" /><span class="skel" style="width: 5rem" /></li>

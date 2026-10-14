@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
 import SelectButton from 'primevue/selectbutton'
@@ -12,6 +13,7 @@ import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
 import { user, perfil } from '../lib/auth'
 import { MOTIVOS_ENTRADA, MOTIVOS_SAIDA } from '../lib/movimentacoes'
+import { fmtDataLocal, diasAte } from '../lib/format'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -22,6 +24,7 @@ const props = defineProps({
 const emit = defineEmits(['update:visible', 'saved'])
 
 const toast = useToast()
+const confirm = useConfirm()
 const salvando = ref(false)
 const lotesDisponiveis = ref([])
 
@@ -60,8 +63,54 @@ const usaDistribuicao = computed(() => form.value.tipo === 'saida' && loteObriga
 const totalDistribuido = computed(() =>
   Object.values(form.value.distribuicao).reduce((s, q) => s + (Number(q) || 0), 0)
 )
+// Lote vencido só pode sair como avariado/perda (o banco também bloqueia).
+const ehAvariado = computed(() => form.value.motivo === 'avariado')
+function loteBloqueado(l) {
+  return l.vencido && !ehAvariado.value
+}
+// Avariado: vencidos no topo (é o que se descarta). Demais: válidos em FEFO, vencidos no fim.
+const lotesOrdenados = computed(() => {
+  const validos = lotesDisponiveis.value.filter((l) => !l.vencido)
+  const vencidos = lotesDisponiveis.value.filter((l) => l.vencido)
+  return ehAvariado.value ? [...vencidos, ...validos] : [...validos, ...vencidos]
+})
 const saldoTotalDoProduto = computed(() =>
-  lotesDisponiveis.value.reduce((s, l) => s + (l.saldo || 0), 0)
+  lotesDisponiveis.value.filter((l) => !loteBloqueado(l)).reduce((s, l) => s + (l.saldo || 0), 0)
+)
+// FEFO automático: o operador informa o total e o sistema preenche os lotes
+// na ordem da lista (pulando os bloqueados). Os campos por lote continuam editáveis.
+const qtdTotal = ref(null)
+let somaAuto = null // soma que a última distribuição automática gerou
+function distribuir(total) {
+  const dist = {}
+  let resta = Math.max(0, Number(total) || 0)
+  for (const l of lotesOrdenados.value) {
+    if (resta <= 0) break
+    if (loteBloqueado(l)) continue
+    const q = Math.min(resta, l.saldo)
+    dist[l.lote_id] = q
+    resta -= q
+  }
+  form.value.distribuicao = dist
+  somaAuto = Math.max(0, Number(total) || 0) - resta
+}
+function onQtdTotal(v) {
+  qtdTotal.value = v
+  distribuir(v)
+}
+// Ajuste manual num lote: o total acompanha, sem redistribuir.
+watch(
+  () => Object.values(form.value.distribuicao).reduce((s, q) => s + (Number(q) || 0), 0),
+  (t) => {
+    if (t !== somaAuto) qtdTotal.value = t || null
+  }
+)
+const faltaParaTotal = computed(() =>
+  qtdTotal.value && qtdTotal.value > saldoTotalDoProduto.value ? qtdTotal.value - saldoTotalDoProduto.value : 0
+)
+
+const saldoVencido = computed(() =>
+  lotesDisponiveis.value.filter((l) => l.vencido).reduce((s, l) => s + (l.saldo || 0), 0)
 )
 
 watch(
@@ -89,11 +138,22 @@ watch(
     carregarLotes()
   }
 )
+// Saiu de "avariado": zera o que tinha sido posto em lote vencido.
+watch(
+  () => form.value.motivo,
+  () => {
+    for (const l of lotesDisponiveis.value) {
+      if (loteBloqueado(l)) delete form.value.distribuicao[l.lote_id]
+    }
+    if (qtdTotal.value) distribuir(qtdTotal.value)
+  }
+)
 watch(() => form.value.produto_id, carregarLotes)
 
 async function carregarLotes() {
   form.value.lote_id = null
   form.value.distribuicao = {}
+  qtdTotal.value = null
   if (form.value.tipo !== 'saida' || !form.value.produto_id) {
     lotesDisponiveis.value = []
     return
@@ -104,16 +164,35 @@ async function carregarLotes() {
     .eq('produto_id', form.value.produto_id)
     .gt('saldo', 0)
     .order('validade', { ascending: true, nullsFirst: false })
-  lotesDisponiveis.value = (data ?? []).map((l) => ({
-    ...l,
-    rotulo: `${l.numero_lote || 'sem nº'} · venc. ${
-      l.validade ? new Date(l.validade).toLocaleDateString('pt-BR') : '—'
-    } · saldo ${l.saldo}`,
-  }))
+  lotesDisponiveis.value = (data ?? []).map((l) => {
+    const dias = diasAte(l.validade)
+    return {
+      ...l,
+      vencido: dias !== null && dias < 0,
+      dias,
+      validadeFmt: fmtDataLocal(l.validade),
+      rotulo: `${l.numero_lote || 'sem nº'} · venc. ${fmtDataLocal(l.validade)} · saldo ${l.saldo}`,
+    }
+  })
 }
 
 function fechar() {
   emit('update:visible', false)
+}
+// Pergunta sim/não. Resolve true (trocar), false (manter) ou null (cancelar o registro).
+function perguntar(mensagem) {
+  return new Promise((resolve) => {
+    confirm.require({
+      header: 'Validade diferente',
+      message: mensagem,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Trocar validade',
+      rejectLabel: 'Manter a atual',
+      accept: () => resolve(true),
+      reject: () => resolve(false),
+      onHide: () => resolve(null),
+    })
+  })
 }
 function dataISO(d) {
   if (!d) return null
@@ -158,6 +237,15 @@ async function salvar() {
     }
     for (const l of lotesDisponiveis.value) {
       const q = Number(f.distribuicao[l.lote_id] || 0)
+      if (q > 0 && loteBloqueado(l)) {
+        toast.add({
+          severity: 'warn',
+          summary: 'Lote vencido',
+          detail: `${l.numero_lote || 'sem nº'} venceu em ${l.validadeFmt}. Só pode sair como "Avariado / perda".`,
+          life: 6000,
+        })
+        return
+      }
       if (q < 0) {
         toast.add({ severity: 'warn', summary: 'Quantidade inválida', detail: 'Não pode ser negativo.', life: 4000 })
         return
@@ -213,15 +301,28 @@ async function salvar() {
     let lote_id = f.lote_id
     if (f.tipo === 'entrada' && f.numero_lote?.trim()) {
       const num = f.numero_lote.trim()
-      const { data: existente } = await supabase
+      // Mesmo lote ignorando maiúsculas/espaços ("ab12" = "AB12 "), igual ao índice único do banco.
+      const chave = num.toUpperCase()
+      const { data: lotesProd, error: eBusca } = await supabase
         .from('lotes')
-        .select('id')
+        .select('id, numero_lote, validade')
         .eq('produto_id', f.produto_id)
-        .eq('numero_lote', num)
-        .maybeSingle()
+      if (eBusca) throw eBusca
+      const existente = (lotesProd ?? []).find((l) => (l.numero_lote ?? '').trim().toUpperCase() === chave)
       if (existente) {
         lote_id = existente.id
-        if (f.validade) await supabase.from('lotes').update({ validade: dataISO(f.validade) }).eq('id', existente.id)
+        const novaValidade = dataISO(f.validade)
+        if (novaValidade && novaValidade !== existente.validade) {
+          const trocar = await perguntar(
+            `O lote ${existente.numero_lote} já está cadastrado com validade ${fmtDataLocal(existente.validade)}. ` +
+              `Trocar para ${fmtDataLocal(novaValidade)}? Isso vale para todo o saldo desse lote.`
+          )
+          if (trocar === null) return
+          if (trocar) {
+            const { error: eVal } = await supabase.from('lotes').update({ validade: novaValidade }).eq('id', existente.id)
+            if (eVal) throw eVal
+          }
+        }
       } else {
         const { data: novo, error: eLote } = await supabase
           .from('lotes')
@@ -326,22 +427,53 @@ async function salvar() {
       <!-- Saída multi-lote: informa quanto sai de cada lote (FEFO sugerido na ordem) -->
       <div v-if="usaDistribuicao" class="field">
         <label>
-          Quanto sai de cada lote <span class="opc">· primeiro a vencer no topo</span>
+          Quantidade
+          <span class="opc">· {{ ehAvariado ? 'vencidos no topo' : 'primeiro a vencer no topo' }}</span>
         </label>
+        <div v-if="lotesDisponiveis.length" class="qtd-fefo">
+          <InputNumber
+            :model-value="qtdTotal"
+            input-id="mov-qtd"
+            :min="0"
+            placeholder="Quantidade"
+            aria-label="Quantidade total da saída"
+            show-buttons
+            @update:model-value="onQtdTotal"
+            @input="onQtdTotal($event.value)"
+          />
+          <span class="muted">
+            {{ ehAvariado ? 'Distribui a partir dos vencidos.' : 'Distribui do lote que vence primeiro.' }}
+            Ajuste por lote se precisar.
+          </span>
+        </div>
+        <div v-if="faltaParaTotal" class="empty" style="color: var(--danger-fg); margin-bottom: 0.5rem">
+          Faltam {{ faltaParaTotal }}: só há {{ saldoTotalDoProduto }} disponíveis.
+        </div>
         <div v-if="!lotesDisponiveis.length" class="empty" style="padding: 0.4rem 0">
           Este produto não tem lote com saldo. Registre uma entrada primeiro.
         </div>
         <div v-else class="lotes-lista">
-          <div v-for="l in lotesDisponiveis" :key="l.lote_id" class="lote-row">
+          <div
+            v-for="l in lotesOrdenados"
+            :key="l.lote_id"
+            class="lote-row"
+            :class="{ 'lote-vencido': l.vencido, 'lote-bloqueado': loteBloqueado(l) }"
+          >
             <div class="lote-info">
-              <div class="lote-num"><span class="mono">{{ l.numero_lote || 'sem nº' }}</span></div>
+              <div class="lote-num">
+                <span class="mono">{{ l.numero_lote || 'sem nº' }}</span>
+                <span v-if="l.vencido" class="tag-vencido">Vencido</span>
+              </div>
               <div class="lote-meta">
-                vence {{ l.validade ? new Date(l.validade).toLocaleDateString('pt-BR') : '—' }}
+                <template v-if="l.vencido">venceu em {{ l.validadeFmt }}</template>
+                <template v-else>vence {{ l.validadeFmt }}<template v-if="l.dias !== null && l.dias <= 60"> · em {{ l.dias }} {{ l.dias === 1 ? 'dia' : 'dias' }}</template></template>
                 · saldo <strong>{{ l.saldo }}</strong>
               </div>
+              <div v-if="loteBloqueado(l)" class="lote-meta">Só sai como "Avariado / perda".</div>
             </div>
             <InputNumber
               v-model="form.distribuicao[l.lote_id]"
+              :disabled="loteBloqueado(l)"
               :min="0"
               :max="l.saldo"
               :show-buttons="true"
@@ -354,6 +486,10 @@ async function salvar() {
           <div class="lote-total">
             <span>Total da saída</span>
             <span><strong>{{ totalDistribuido }}</strong> de {{ saldoTotalDoProduto }} disponíveis</span>
+          </div>
+          <div v-if="saldoVencido && !ehAvariado" class="lote-total">
+            <span>Em lotes vencidos</span>
+            <span>{{ saldoVencido }} · registrar baixa como "Avariado / perda"</span>
           </div>
         </div>
       </div>

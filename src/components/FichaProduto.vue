@@ -33,7 +33,7 @@ watch(
         .order('validade', { ascending: true, nullsFirst: false }),
       supabase
         .from('movimentacoes')
-        .select('id, tipo, quantidade, motivo, observacao, data, usuario_id, setor:setores(nome)')
+        .select('id, tipo, quantidade, motivo, observacao, data, usuario_id, estorno_de, setor:setores(nome)')
         .eq('produto_id', pid)
         .order('data', { ascending: false })
         .limit(10),
@@ -102,7 +102,7 @@ function autor(m) {
       </Column>
       <Column header="Motivo">
         <template #body="{ data }">
-          {{ motivoLabel(data.motivo) }}<span v-if="data.setor?.nome" class="muted"> → {{ data.setor.nome }}</span>
+          <span v-if="data.estorno_de" class="tag-estorno" style="margin-right: 0.35rem">Estorno</span>{{ motivoLabel(data.motivo) }}<span v-if="data.setor?.nome" class="muted"> → {{ data.setor.nome }}</span>
           <div v-if="data.observacao" class="muted" style="font-size: 0.8rem">{{ data.observacao }}</div>
         </template>
       </Column>

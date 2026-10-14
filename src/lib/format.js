@@ -10,3 +10,23 @@ export function tempoRelativo(d) {
   if (dias < 7) return `há ${dias}d`
   return new Date(d).toLocaleDateString('pt-BR')
 }
+
+// Datas 'YYYY-MM-DD' (validade) viram Date no fuso LOCAL.
+// new Date('2026-10-30') é meia-noite UTC = 29/10 21h em Brasília (1 dia a menos).
+export function parseDataLocal(v) {
+  if (!v) return null
+  const [y, m, d] = v.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+export function fmtDataLocal(v) {
+  return v ? parseDataLocal(v).toLocaleDateString('pt-BR') : '—'
+}
+
+// Dias até a data (negativo = já passou). null se não houver data.
+export function diasAte(v) {
+  if (!v) return null
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+  return Math.round((parseDataLocal(v) - hoje) / 86400000)
+}

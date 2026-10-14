@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -16,9 +17,12 @@ import MovimentacaoDialog from '../components/MovimentacaoDialog.vue'
 import FichaProduto from '../components/FichaProduto.vue'
 import ProdutoDialog from '../components/ProdutoDialog.vue'
 import Paginador from '../components/Paginador.vue'
+import BaixaVencidosDialog from '../components/BaixaVencidosDialog.vue'
 import { exportarRelatorioMensal } from '../lib/relatorioExcel'
 
 const toast = useToast()
+const route = useRoute()
+const router = useRouter()
 
 const linhas = ref([])
 const produtos = ref([])
@@ -44,6 +48,9 @@ const fichaVisible = ref(false)
 const fichaProduto = ref(null)
 const produtoDialogVisible = ref(false)
 const produtoEdit = ref(null)
+const baixaVisivel = ref(false)
+// Unidades em lote vencido no estoque inteiro (aparece o botão de baixa).
+const totalVencido = computed(() => linhas.value.reduce((s, r) => s + (r.saldo_vencido || 0), 0))
 
 const linhasFiltradas = computed(() =>
   linhas.value.filter((r) => {
@@ -149,7 +156,14 @@ async function fazerExportMensal() {
   }
 }
 
-onMounted(carregar)
+onMounted(() => {
+  carregar()
+  // Visão geral → "Dar baixa nos vencidos" abre direto o diálogo.
+  if (route.query.baixa) {
+    baixaVisivel.value = true
+    router.replace({ query: {} })
+  }
+})
 </script>
 
 <template>
@@ -159,6 +173,14 @@ onMounted(carregar)
       <p class="page-sub">Farmácia central · saldo atual e próxima validade de cada produto</p>
     </div>
     <div class="page-acoes">
+      <Button
+        v-if="totalVencido > 0"
+        :label="`Baixa de vencidos (${totalVencido})`"
+        icon="pi pi-trash"
+        severity="danger"
+        outlined
+        @click="baixaVisivel = true"
+      />
       <Button label="Novo produto" icon="pi pi-plus" severity="secondary" outlined @click="novoProduto" />
       <Button label="Exportar Excel" icon="pi pi-download" severity="secondary" outlined @click="exportVisible = true" />
       <Button label="Entrada" icon="pi pi-arrow-down" severity="success" @click="abrir('entrada')" />
@@ -217,10 +239,17 @@ onMounted(carregar)
         <span class="cat-texto">{{ data.unidade_medida }}</span>
       </template>
     </Column>
-    <Column field="saldo" header="Saldo" sortable style="width: 6.5rem" header-class="col-num" body-class="col-num">
+    <Column field="saldo_disponivel" header="Disponível" sortable style="width: 7.5rem" header-class="col-num" body-class="col-num">
       <template #body="{ data }">
-        <span class="saldo" :class="{ baixo: data.abaixo_minimo || data.saldo <= 0 }" :title="data.saldo <= 0 ? 'Sem estoque' : data.abaixo_minimo ? 'Abaixo do mínimo' : null">
-          <i v-if="data.abaixo_minimo" class="pi pi-exclamation-triangle" aria-hidden="true" />{{ data.saldo }}
+        <span
+          class="saldo"
+          :class="{ baixo: data.abaixo_minimo || data.saldo_disponivel <= 0 }"
+          :title="data.saldo_disponivel <= 0 ? 'Sem estoque utilizável' : data.abaixo_minimo ? 'Abaixo do mínimo' : null"
+        >
+          <i v-if="data.abaixo_minimo" class="pi pi-exclamation-triangle" aria-hidden="true" />{{ data.saldo_disponivel }}
+        </span>
+        <span v-if="data.saldo_vencido > 0" class="saldo-vencido" :title="`${data.saldo_vencido} em lote vencido — não usar`">
+          +{{ data.saldo_vencido }} vencido
         </span>
       </template>
     </Column>
@@ -270,6 +299,7 @@ onMounted(carregar)
     @saved="carregar"
   />
   <FichaProduto v-model:visible="fichaVisible" :produto="fichaProduto" />
+  <BaixaVencidosDialog v-model:visible="baixaVisivel" @saved="carregar" />
   <ProdutoDialog v-model:visible="produtoDialogVisible" :produto="produtoEdit" @saved="carregar" />
 
   <!-- Export Excel: relatório mensal no formato da planilha base -->
