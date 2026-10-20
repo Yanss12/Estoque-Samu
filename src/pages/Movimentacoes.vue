@@ -12,6 +12,7 @@ import { motivoLabel } from '../lib/movimentacoes'
 import { catLabel } from '../lib/categorias'
 import { fetchPerfisMap } from '../lib/perfis'
 import { baixarPlanilhaSimples } from '../lib/relatorioExcel'
+import { mensagemErro } from '../lib/format'
 
 const toast = useToast()
 const movs = ref([])
@@ -98,7 +99,7 @@ async function exportarMovimentacoes() {
     )
     toast.add({ severity: 'success', summary: 'Excel gerado', detail: `${linhas.length} movimentações exportadas.`, life: 4000 })
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Erro ao gerar Excel', detail: e.message, life: 6000 })
+    toast.add({ severity: 'error', summary: 'Erro ao gerar Excel', detail: mensagemErro(e), life: 6000 })
   } finally {
     exportando.value = false
   }
@@ -134,7 +135,7 @@ async function carregar() {
   q = q.range(first.value, first.value + rows.value - 1)
 
   const { data, count, error } = await q
-  if (error) toast.add({ severity: 'error', summary: 'Erro', detail: error.message, life: 6000 })
+  if (error) toast.add({ severity: 'error', summary: 'Erro ao carregar movimentações', detail: mensagemErro(error), life: 6000 })
   else {
     movs.value = data ?? []
     total.value = count ?? 0

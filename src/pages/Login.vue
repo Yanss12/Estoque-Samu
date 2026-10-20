@@ -7,6 +7,7 @@ import Password from 'primevue/password'
 import Button from 'primevue/button'
 import LogoSamu from '../components/LogoSamu.vue'
 import { signIn } from '../lib/auth'
+import { mensagemErro } from '../lib/format'
 
 const email = ref('')
 const senha = ref('')
@@ -26,7 +27,7 @@ async function entrar() {
     toast.add({
       severity: 'error',
       summary: 'Não foi possível entrar',
-      detail: error.message,
+      detail: mensagemErro(error),
       life: 5000,
     })
     return

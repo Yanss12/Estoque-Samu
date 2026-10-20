@@ -11,6 +11,7 @@ import FichaProduto from '../components/FichaProduto.vue'
 import ProdutoDialog from '../components/ProdutoDialog.vue'
 import Paginador from '../components/Paginador.vue'
 import BaixaVencidosDialog from '../components/BaixaVencidosDialog.vue'
+import { mensagemErro } from '../lib/format'
 
 const toast = useToast()
 const linhas = ref([])
@@ -43,7 +44,7 @@ async function carregar() {
     produtos.value = prods.data ?? []
     setores.value = sets.data ?? []
   } catch (err) {
-    toast.add({ severity: 'error', summary: 'Erro', detail: err.message, life: 6000 })
+    toast.add({ severity: 'error', summary: 'Erro ao carregar psicotrópicos', detail: mensagemErro(err), life: 6000 })
   } finally {
     carregando.value = false
   }

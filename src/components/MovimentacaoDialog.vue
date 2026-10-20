@@ -13,7 +13,7 @@ import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
 import { user, perfil, ehAdmin } from '../lib/auth'
 import { MOTIVOS_ENTRADA, MOTIVOS_SAIDA } from '../lib/movimentacoes'
-import { fmtDataLocal, diasAte } from '../lib/format'
+import { fmtDataLocal, diasAte, mensagemErro } from '../lib/format'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -364,7 +364,7 @@ async function salvar() {
     emit('saved')
     fechar()
   } catch (err) {
-    toast.add({ severity: 'error', summary: 'Erro ao registrar', detail: err.message, life: 6000 })
+    toast.add({ severity: 'error', summary: 'Erro ao registrar', detail: mensagemErro(err), life: 6000 })
   } finally {
     salvando.value = false
   }

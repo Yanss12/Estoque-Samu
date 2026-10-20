@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
+import { fetchComRetentativa } from './rede'
 
 export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY,
   {
+    global: { fetch: fetchComRetentativa },
     auth: {
       persistSession: true,
       autoRefreshToken: true,

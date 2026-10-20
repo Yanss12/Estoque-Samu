@@ -7,7 +7,7 @@ import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
 import { user, perfil } from '../lib/auth'
-import { fmtDataLocal, diasAte } from '../lib/format'
+import { fmtDataLocal, diasAte, mensagemErro } from '../lib/format'
 
 // Baixa dos lotes vencidos que ainda têm saldo: uma saída "avariado" por lote.
 const props = defineProps({
@@ -80,7 +80,7 @@ async function confirmar() {
     emit('saved')
     emit('update:visible', false)
   } catch (err) {
-    toast.add({ severity: 'error', summary: 'Erro ao dar baixa', detail: err.message, life: 6000 })
+    toast.add({ severity: 'error', summary: 'Erro ao dar baixa', detail: mensagemErro(err), life: 6000 })
   } finally {
     salvando.value = false
   }

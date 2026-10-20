@@ -4,6 +4,7 @@ import { useToast } from 'primevue/usetoast'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
 import { alterarSenha, signOut } from '../lib/auth'
+import { mensagemErro } from '../lib/format'
 
 const props = defineProps({
   // Quando true, é o fluxo de 1º acesso (não dá pra cancelar, só trocar ou sair).
@@ -33,7 +34,7 @@ async function salvar() {
     toast.add({ severity: 'success', summary: 'Senha alterada', detail: 'Sua nova senha já está ativa.', life: 4000 })
     emit('done')
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Erro ao alterar', detail: e.message, life: 6000 })
+    toast.add({ severity: 'error', summary: 'Erro ao alterar', detail: mensagemErro(e), life: 6000 })
   } finally {
     salvando.value = false
   }

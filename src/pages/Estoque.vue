@@ -20,6 +20,7 @@ import ProdutoDialog from '../components/ProdutoDialog.vue'
 import Paginador from '../components/Paginador.vue'
 import BaixaVencidosDialog from '../components/BaixaVencidosDialog.vue'
 import { exportarRelatorioMensal } from '../lib/relatorioExcel'
+import { mensagemErro } from '../lib/format'
 
 const toast = useToast()
 const route = useRoute()
@@ -91,7 +92,7 @@ async function carregar() {
     }
     validadePorProduto.value = vmap
   } catch (err) {
-    toast.add({ severity: 'error', summary: 'Erro ao carregar o estoque', detail: err.message, life: 6000 })
+    toast.add({ severity: 'error', summary: 'Erro ao carregar o estoque', detail: mensagemErro(err), life: 6000 })
   } finally {
     carregando.value = false
   }
@@ -150,7 +151,7 @@ async function fazerExportMensal() {
     toast.add({
       severity: semDados ? 'warn' : 'error',
       summary: semDados ? 'Nada para exportar' : 'Erro ao gerar Excel',
-      detail: e.message,
+      detail: mensagemErro(e),
       life: 6000,
     })
   } finally {

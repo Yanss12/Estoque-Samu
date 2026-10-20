@@ -30,3 +30,13 @@ export function diasAte(v) {
   hoje.setHours(0, 0, 0, 0)
   return Math.round((parseDataLocal(v) - hoje) / 86400000)
 }
+
+// Mensagem de erro para toast. Falha de rede vira texto legível em vez de
+// "TypeError: Failed to fetch" (Chrome) / "Load failed" (Safari) / "NetworkError" (Firefox).
+export function mensagemErro(err) {
+  const msg = err?.message ?? String(err ?? '')
+  if (/failed to fetch|load failed|networkerror|network request failed/i.test(msg)) {
+    return 'Falha de conexão com o servidor. Verifique a internet e tente de novo.'
+  }
+  return msg
+}

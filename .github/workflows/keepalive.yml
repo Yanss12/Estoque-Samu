@@ -1,0 +1,27 @@
+name: Manter Supabase ativo
+
+# O plano gratuito do Supabase pausa o projeto quando fica dias sem uso.
+# Uma chamada diária à função public.ping() (só retorna 1, não lê tabela
+# nenhuma) mantém o banco acordado. Usa a mesma chave publishable do site.
+on:
+  schedule:
+    - cron: '17 11 * * *' # todo dia, 08:17 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar ping no Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          resposta=$(curl -sS --retry 3 --retry-delay 20 --max-time 30 -w ' %{http_code}' \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/ping" \
+            -H "apikey: $SUPABASE_KEY" -H "Content-Type: application/json" -d '{}')
+          echo "Resposta: $resposta"
+          [ "$resposta" = "1 200" ] || { echo "::error::Supabase não respondeu ao ping (pausado?)"; exit 1; }

@@ -35,10 +35,13 @@ async function setSession(s) {
 export async function initAuth() {
   const { data } = await supabase.auth.getSession()
   await setSession(data.session)
-  // Não chamar o Supabase (await) dentro do callback: o supabase-js trava
-  // (deadlock) principalmente na renovação do token. Adia para fora dele.
+  // A sessão é atualizada NA HORA (o router depende dela logo após o login/logout).
+  // Só a consulta do perfil é adiada: chamar o Supabase (await) dentro do callback
+  // trava o supabase-js (deadlock), principalmente na renovação do token.
   supabase.auth.onAuthStateChange((_event, s) => {
-    setTimeout(() => setSession(s), 0)
+    session.value = s
+    user.value = s?.user ?? null
+    setTimeout(loadPerfil, 0)
   })
 }
 

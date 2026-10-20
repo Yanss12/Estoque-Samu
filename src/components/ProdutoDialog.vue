@@ -9,6 +9,7 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
 import { CATEGORIAS } from '../lib/categorias'
+import { mensagemErro } from '../lib/format'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -132,7 +133,7 @@ async function salvar() {
     emit('saved')
     fechar()
   } catch (err) {
-    toast.add({ severity: 'error', summary: 'Erro ao salvar', detail: err.message, life: 6000 })
+    toast.add({ severity: 'error', summary: 'Erro ao salvar', detail: mensagemErro(err), life: 6000 })
   } finally {
     salvando.value = false
   }

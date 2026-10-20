@@ -6,6 +6,7 @@ import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
 import { motivoLabel } from '../lib/movimentacoes'
+import { mensagemErro } from '../lib/format'
 
 // Estorno = movimentação inversa ligada à original (movimentações não se editam
 // nem se apagam). O banco copia produto/lote/quantidade/setor da original.
@@ -62,7 +63,7 @@ async function confirmar() {
     toast.add({
       severity: 'error',
       summary: jaEstornada ? 'Já estornada' : 'Não foi possível estornar',
-      detail: jaEstornada ? 'Este lançamento já tem um estorno.' : err.message,
+      detail: jaEstornada ? 'Este lançamento já tem um estorno.' : mensagemErro(err),
       life: 6000,
     })
   } finally {
