@@ -10,9 +10,18 @@ export const MOTIVOS_SAIDA = [
   { value: 'emprestimo', label: 'Empréstimo cedido' },
   { value: 'doacao', label: 'Doação cedida' },
   { value: 'avariado', label: 'Avariado / perda' },
+  { value: 'vencido', label: 'Vencido (descarte)' },
+  { value: 'funcionario', label: 'Entrega a funcionário' },
+  { value: 'outros', label: 'Outros (justificar)' },
 ]
 
-const todos = [...MOTIVOS_ENTRADA, ...MOTIVOS_SAIDA]
+// Motivos que só o servidor gera (não aparecem como opção manual).
+const MOTIVOS_SISTEMA = [{ value: 'ajuste_auditoria', label: 'Ajuste de auditoria' }]
+
+// Motivos de saída que podem tirar saldo de lote vencido.
+export const MOTIVOS_LOTE_VENCIDO = ['avariado', 'vencido']
+
+const todos = [...MOTIVOS_ENTRADA, ...MOTIVOS_SAIDA, ...MOTIVOS_SISTEMA]
 export function motivoLabel(v) {
   return todos.find((m) => m.value === v)?.label ?? v ?? '—'
 }

@@ -29,6 +29,21 @@ export async function baixarPlanilhaSimples(arquivo, aba, header, linhas, largur
   XLSX.writeFile(wb, arquivo)
 }
 
+// Exporta a mesma tabela em CSV (UTF-8 com BOM, separador ';' para abrir direto no Excel pt-BR).
+export function baixarCsv(arquivo, header, linhas) {
+  const esc = (v) => {
+    const t = String(v ?? '')
+    return /[";\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t
+  }
+  const texto = [header, ...linhas].map((l) => l.map(esc).join(';')).join('\r\n')
+  const url = URL.createObjectURL(new Blob(['\ufeff' + texto], { type: 'text/csv;charset=utf-8' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = arquivo
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export async function exportarRelatorioMensal(ano, mes) {
   const { data, error } = await supabase.rpc('relatorio_mensal', { p_ano: ano, p_mes: mes })
   if (error) throw error

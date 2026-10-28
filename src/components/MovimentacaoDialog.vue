@@ -12,7 +12,8 @@ import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
 import { user, perfil, ehAdmin } from '../lib/auth'
-import { MOTIVOS_ENTRADA, MOTIVOS_SAIDA } from '../lib/movimentacoes'
+import { MOTIVOS_ENTRADA, MOTIVOS_SAIDA, MOTIVOS_LOTE_VENCIDO } from '../lib/movimentacoes'
+import { carregarFuncionariosAtivos } from '../lib/funcionarios'
 import { fmtDataLocal, diasAte, mensagemErro } from '../lib/format'
 
 const props = defineProps({
@@ -41,6 +42,7 @@ function novoForm() {
     quantidade: 1,
     motivo: null,
     setor_id: null,
+    funcionario_id: null,
     observacao: '',
     numero_lote: '',
     validade: null,
@@ -54,6 +56,9 @@ const motivoOpcoes = computed(() =>
   form.value.tipo === 'entrada' ? MOTIVOS_ENTRADA : MOTIVOS_SAIDA
 )
 const ehLiberacao = computed(() => form.value.tipo === 'saida' && form.value.motivo === 'liberacao')
+const ehFuncionario = computed(() => form.value.tipo === 'saida' && form.value.motivo === 'funcionario')
+const ehOutros = computed(() => form.value.tipo === 'saida' && form.value.motivo === 'outros')
+const funcionarios = ref([])
 const produtoSel = computed(() => props.produtos.find((p) => p.id === form.value.produto_id) ?? null)
 const ehControlado = computed(() => !!produtoSel.value?.controlado)
 // Lote obrigatório p/ consumíveis; permanente (equipamento) é isento.
@@ -64,7 +69,7 @@ const totalDistribuido = computed(() =>
   Object.values(form.value.distribuicao).reduce((s, q) => s + (Number(q) || 0), 0)
 )
 // Lote vencido só pode sair como avariado/perda (o banco também bloqueia).
-const ehAvariado = computed(() => form.value.motivo === 'avariado')
+const ehAvariado = computed(() => MOTIVOS_LOTE_VENCIDO.includes(form.value.motivo))
 function loteBloqueado(l) {
   return l.vencido && !ehAvariado.value
 }
@@ -119,6 +124,7 @@ watch(
     if (!aberto) return
     form.value = novoForm()
     lotesDisponiveis.value = []
+    carregarFuncionariosAtivos().then((l) => (funcionarios.value = l))
     if (props.preselect) {
       form.value.produto_id = props.preselect.produto_id ?? null
       if (props.preselect.tipo) form.value.tipo = props.preselect.tipo
@@ -216,6 +222,14 @@ async function salvar() {
     toast.add({ severity: 'warn', summary: 'Falta o setor', detail: 'Liberação precisa do setor de destino.', life: 4000 })
     return
   }
+  if (ehFuncionario.value && !f.funcionario_id) {
+    toast.add({ severity: 'warn', summary: 'Falta o funcionário', detail: 'Selecione quem recebeu o item.', life: 4000 })
+    return
+  }
+  if (ehOutros.value && (f.observacao?.trim().length ?? 0) < 5) {
+    toast.add({ severity: 'warn', summary: 'Justificativa obrigatória', detail: 'Em "Outros", descreva o motivo (mín. 5 caracteres).', life: 4500 })
+    return
+  }
   // Entrada: lote+validade obrigatórios p/ consumíveis
   if (loteObrigatorio.value && f.tipo === 'entrada' && (!f.numero_lote?.trim() || !f.validade)) {
     toast.add({ severity: 'warn', summary: 'Lote obrigatório', detail: 'Informe o número do lote e a validade.', life: 4000 })
@@ -241,7 +255,7 @@ async function salvar() {
         toast.add({
           severity: 'warn',
           summary: 'Lote vencido',
-          detail: `${l.numero_lote || 'sem nº'} venceu em ${l.validadeFmt}. Só pode sair como "Avariado / perda".`,
+          detail: `${l.numero_lote || 'sem nº'} venceu em ${l.validadeFmt}. Só pode sair como "Avariado / perda" ou "Vencido".`,
           life: 6000,
         })
         return
@@ -277,6 +291,7 @@ async function salvar() {
         .map((x) => ({
           produto_id: f.produto_id,
           setor_id: ehLiberacao.value ? f.setor_id : null,
+          funcionario_id: ehFuncionario.value ? f.funcionario_id : null,
           lote_id: x.lote_id,
           tipo: 'saida',
           quantidade: x.qty,
@@ -347,6 +362,7 @@ async function salvar() {
     const { error } = await supabase.from('movimentacoes').insert({
       produto_id: f.produto_id,
       setor_id: ehLiberacao.value ? f.setor_id : null,
+      funcionario_id: ehFuncionario.value ? f.funcionario_id : null,
       lote_id: lote_id || null,
       tipo: f.tipo,
       quantidade: f.quantidade,
@@ -434,6 +450,19 @@ async function salvar() {
         />
       </div>
 
+      <div v-if="ehFuncionario" class="field">
+        <label>Funcionário</label>
+        <Select
+          v-model="form.funcionario_id"
+          :options="funcionarios"
+          option-label="nome"
+          option-value="id"
+          filter
+          placeholder="Quem recebeu?"
+          class="full"
+        />
+      </div>
+
       <!-- Saída multi-lote: informa quanto sai de cada lote (FEFO sugerido na ordem) -->
       <div v-if="usaDistribuicao" class="field">
         <label>
@@ -479,7 +508,7 @@ async function salvar() {
                 <template v-else>vence {{ l.validadeFmt }}<template v-if="l.dias !== null && l.dias <= 60"> · em {{ l.dias }} {{ l.dias === 1 ? 'dia' : 'dias' }}</template></template>
                 · saldo <strong>{{ l.saldo }}</strong>
               </div>
-              <div v-if="loteBloqueado(l)" class="lote-meta">Só sai como "Avariado / perda".</div>
+              <div v-if="loteBloqueado(l)" class="lote-meta">Só sai como "Avariado / perda" ou "Vencido".</div>
             </div>
             <InputNumber
               v-model="form.distribuicao[l.lote_id]"
@@ -499,7 +528,7 @@ async function salvar() {
           </div>
           <div v-if="saldoVencido && !ehAvariado" class="lote-total">
             <span>Em lotes vencidos</span>
-            <span>{{ saldoVencido }} · registrar baixa como "Avariado / perda"</span>
+            <span>{{ saldoVencido }} · registrar baixa como "Avariado / perda" ou "Vencido"</span>
           </div>
         </div>
       </div>
@@ -531,7 +560,7 @@ async function salvar() {
       </div>
 
       <div class="field">
-        <label>Observação <span class="opc">(opcional)</span></label>
+        <label>Observação <span class="opc">{{ ehOutros ? '(obrigatória, mín. 5 caracteres)' : '(opcional)' }}</span></label>
         <Textarea v-model="form.observacao" rows="2" auto-resize class="full" />
       </div>
     </form>

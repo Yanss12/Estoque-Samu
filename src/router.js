@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { session } from './lib/auth'
+import { session, podeAuditar } from './lib/auth'
 
 const routes = [
   {
@@ -20,7 +20,17 @@ const routes = [
     name: 'psicotropicos',
     component: () => import('./pages/Psicotropicos.vue'),
   },
+  {
+    path: '/auditoria',
+    name: 'auditoria',
+    component: () => import('./pages/Auditoria.vue'),
+    meta: { requer: 'podeAuditar' },
+  },
+  { path: '/relatorios', name: 'relatorios', component: () => import('./pages/Relatorios.vue') },
 ]
+
+// Guarda por papel: meta.requer aponta para um computed exportado por lib/auth.
+const guardas = { podeAuditar }
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -30,6 +40,7 @@ const router = createRouter({
 router.beforeEach((to) => {
   if (!to.meta.public && !session.value) return { name: 'login' }
   if (to.name === 'login' && session.value) return { name: 'dashboard' }
+  if (to.meta.requer && !guardas[to.meta.requer]?.value) return { name: 'dashboard' }
 })
 
 export default router

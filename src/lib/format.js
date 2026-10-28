@@ -40,3 +40,8 @@ export function mensagemErro(err) {
   }
   return msg
 }
+
+// Date -> 'YYYY-MM-DD' no fuso local (toISOString() voltaria UTC e erraria o dia).
+export function dataISOLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}

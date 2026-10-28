@@ -7,7 +7,7 @@ import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import LogoSamu from './components/LogoSamu.vue'
 import TrocarSenha from './components/TrocarSenha.vue'
-import { user, perfil, precisaTrocarSenha, signOut } from './lib/auth'
+import { user, perfil, precisaTrocarSenha, podeAuditar, signOut } from './lib/auth'
 import { isDark, toggleTheme } from './lib/theme'
 
 const router = useRouter()
@@ -20,7 +20,10 @@ const nav = [
   { name: 'estoque', label: 'Estoque', icon: 'pi pi-box' },
   { name: 'movimentacoes', label: 'Movimentações', icon: 'pi pi-arrow-right-arrow-left' },
   { name: 'psicotropicos', label: 'Psicotrópicos', icon: 'pi pi-shield' },
+  { name: 'relatorios', label: 'Relatórios', icon: 'pi pi-chart-bar' },
+  { name: 'auditoria', label: 'Auditoria', icon: 'pi pi-clipboard', visivel: () => podeAuditar.value },
 ]
+const navVisivel = computed(() => nav.filter((i) => !i.visivel || i.visivel()))
 
 async function sair() {
   await signOut()
@@ -52,7 +55,7 @@ async function sair() {
       </div>
       <nav class="nav" aria-label="Principal">
         <router-link
-          v-for="item in nav"
+          v-for="item in navVisivel"
           :key="item.name"
           :to="{ name: item.name }"
           :title="item.label"
