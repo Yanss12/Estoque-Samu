@@ -1,4 +1,4 @@
-import{$t as e,An as t,At as n,Ct as r,Dt as i,Ft as a,It as o,Lt as s,Nn as c,Pt as l,Tt as u,Zt as d,en as f,ft as p,g as m,l as h,ln as g,nn as _,qt as v,tn as y,un as b,zt as x}from"./format-BwPmLEL_.js";import{o as S}from"./index-D2JF0jVG.js";var C=m.extend({name:`togglebutton`,style:`
+import{$t as e,An as t,At as n,Ct as r,Dt as i,Ft as a,It as o,Lt as s,Nn as c,Pt as l,Tt as u,Zt as d,en as f,ft as p,g as m,l as h,ln as g,nn as _,qt as v,tn as y,un as b,zt as x}from"./format-BwPmLEL_.js";import{o as S}from"./index-gkAEbb-Q.js";var C=m.extend({name:`togglebutton`,style:`
     .p-togglebutton {
         display: inline-flex;
         cursor: pointer;
