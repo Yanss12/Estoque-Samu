@@ -5,16 +5,12 @@ import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
 import TabPanels from 'primevue/tabpanels'
 import TabPanel from 'primevue/tabpanel'
-import Button from 'primevue/button'
 import RelConsumoPeriodo from '../components/RelConsumoPeriodo.vue'
 import RelConsumoFuncionario from '../components/RelConsumoFuncionario.vue'
 import RelEstoqueCritico from '../components/RelEstoqueCritico.vue'
 import RelValidade from '../components/RelValidade.vue'
-import FuncionariosDialog from '../components/FuncionariosDialog.vue'
-import { gereFuncionarios } from '../lib/auth'
 
 const aba = ref('consumo')
-const funcionariosVisivel = ref(false)
 </script>
 
 <template>
@@ -22,9 +18,6 @@ const funcionariosVisivel = ref(false)
     <div>
       <h1>Relatórios</h1>
       <p class="page-sub">Consumo, funcionários, estoque crítico e validade</p>
-    </div>
-    <div class="page-acoes">
-      <Button v-if="gereFuncionarios" label="Funcionários" icon="pi pi-users" severity="secondary" outlined @click="funcionariosVisivel = true" />
     </div>
   </div>
 
@@ -42,6 +35,4 @@ const funcionariosVisivel = ref(false)
       <TabPanel value="validade"><RelValidade /></TabPanel>
     </TabPanels>
   </Tabs>
-
-  <FuncionariosDialog v-model:visible="funcionariosVisivel" />
 </template>
