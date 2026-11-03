@@ -8,7 +8,7 @@ import Paginador from '../components/Paginador.vue'
 import ListaMovimentacoes from '../components/ListaMovimentacoes.vue'
 import EstornoDialog from '../components/EstornoDialog.vue'
 import { supabase } from '../lib/supabase'
-import { motivoLabel } from '../lib/movimentacoes'
+import { motivoLabel, nomeDestinatario } from '../lib/movimentacoes'
 import { catLabel } from '../lib/categorias'
 import { fetchPerfisMap } from '../lib/perfis'
 import { baixarPlanilhaSimples } from '../lib/relatorioExcel'
@@ -58,7 +58,7 @@ async function exportarMovimentacoes() {
       let q = supabase
         .from('movimentacoes')
         .select(
-          'tipo, quantidade, motivo, observacao, data, usuario_id, estorno_de, produto:produtos(nome, categoria), setor:setores(nome), lote:lotes(numero_lote)'
+          'tipo, quantidade, motivo, observacao, data, usuario_id, funcionario_nome, funcionario:funcionarios(nome), estorno_de, produto:produtos(nome, categoria), setor:setores(nome), lote:lotes(numero_lote)'
         )
         .order('data', { ascending: false })
       if (tipoFiltro.value) q = q.eq('tipo', tipoFiltro.value)
@@ -84,7 +84,7 @@ async function exportarMovimentacoes() {
       m.quantidade,
       m.lote?.numero_lote || '',
       m.setor?.nome || '',
-      motivoLabel(m.motivo),
+      motivoLabel(m.motivo) + (nomeDestinatario(m) ? ` → ${nomeDestinatario(m)}` : ''),
       m.observacao || '',
       perfisMap.value[m.usuario_id] || '',
     ])
@@ -121,7 +121,7 @@ async function carregar() {
   let q = supabase
     .from('movimentacoes')
     .select(
-      'id, tipo, quantidade, motivo, observacao, data, usuario_id, produto_id, lote_id, setor_id, estorno_de, produto:produtos(nome, controlado), setor:setores(nome), lote:lotes(numero_lote)',
+      'id, tipo, quantidade, motivo, observacao, data, usuario_id, funcionario_nome, funcionario:funcionarios(nome), produto_id, lote_id, setor_id, estorno_de, produto:produtos(nome, controlado), setor:setores(nome), lote:lotes(numero_lote)',
       { count: 'exact' }
     )
     .order('data', { ascending: false })

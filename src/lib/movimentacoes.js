@@ -22,6 +22,11 @@ const MOTIVOS_SISTEMA = [{ value: 'ajuste_auditoria', label: 'Ajuste de auditori
 export const MOTIVOS_LOTE_VENCIDO = ['avariado', 'vencido']
 
 const todos = [...MOTIVOS_ENTRADA, ...MOTIVOS_SAIDA, ...MOTIVOS_SISTEMA]
+// Destinatário de saída a funcionário: texto livre novo, com fallback ao cadastro (histórico antigo).
+export function nomeDestinatario(m) {
+  return m?.funcionario_nome?.trim() || m?.funcionario?.nome || ''
+}
+
 export function motivoLabel(v) {
   return todos.find((m) => m.value === v)?.label ?? v ?? '—'
 }

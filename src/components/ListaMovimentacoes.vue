@@ -30,6 +30,7 @@ function foiEstornada(m) {
 }
 function destino(m) {
   if (m.motivo === 'liberacao' && m.setor?.nome) return `Liberação → ${m.setor.nome}`
+  if (m.motivo === 'funcionario' && nomeDestinatario(m)) return `${motivoLabel(m.motivo)} → ${nomeDestinatario(m)}`
   return motivoLabel(m.motivo)
 }
 function icone(m) {

@@ -13,7 +13,6 @@ import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
 import { user, perfil, ehAdmin } from '../lib/auth'
 import { MOTIVOS_ENTRADA, MOTIVOS_SAIDA, MOTIVOS_LOTE_VENCIDO } from '../lib/movimentacoes'
-import { carregarFuncionariosAtivos } from '../lib/funcionarios'
 import { fmtDataLocal, diasAte, mensagemErro } from '../lib/format'
 
 const props = defineProps({
@@ -42,7 +41,7 @@ function novoForm() {
     quantidade: 1,
     motivo: null,
     setor_id: null,
-    funcionario_id: null,
+    funcionario_nome: '',
     observacao: '',
     numero_lote: '',
     validade: null,
@@ -58,7 +57,6 @@ const motivoOpcoes = computed(() =>
 const ehLiberacao = computed(() => form.value.tipo === 'saida' && form.value.motivo === 'liberacao')
 const ehFuncionario = computed(() => form.value.tipo === 'saida' && form.value.motivo === 'funcionario')
 const ehOutros = computed(() => form.value.tipo === 'saida' && form.value.motivo === 'outros')
-const funcionarios = ref([])
 const produtoSel = computed(() => props.produtos.find((p) => p.id === form.value.produto_id) ?? null)
 const ehControlado = computed(() => !!produtoSel.value?.controlado)
 // Lote obrigatório p/ consumíveis; permanente (equipamento) é isento.
@@ -124,7 +122,6 @@ watch(
     if (!aberto) return
     form.value = novoForm()
     lotesDisponiveis.value = []
-    carregarFuncionariosAtivos().then((l) => (funcionarios.value = l))
     if (props.preselect) {
       form.value.produto_id = props.preselect.produto_id ?? null
       if (props.preselect.tipo) form.value.tipo = props.preselect.tipo
@@ -222,8 +219,9 @@ async function salvar() {
     toast.add({ severity: 'warn', summary: 'Falta o setor', detail: 'Liberação precisa do setor de destino.', life: 4000 })
     return
   }
-  if (ehFuncionario.value && !f.funcionario_id) {
-    toast.add({ severity: 'warn', summary: 'Falta o funcionário', detail: 'Selecione quem recebeu o item.', life: 4000 })
+  const nomeRecebedor = (f.funcionario_nome ?? '').trim()
+  if (ehFuncionario.value && (nomeRecebedor.length < 2 || nomeRecebedor.length > 80)) {
+    toast.add({ severity: 'warn', summary: 'Falta quem recebeu', detail: 'Digite o nome de quem recebeu o item (2 a 80 caracteres).', life: 4000 })
     return
   }
   if (ehOutros.value && (f.observacao?.trim().length ?? 0) < 5) {
@@ -291,7 +289,8 @@ async function salvar() {
         .map((x) => ({
           produto_id: f.produto_id,
           setor_id: ehLiberacao.value ? f.setor_id : null,
-          funcionario_id: ehFuncionario.value ? f.funcionario_id : null,
+          funcionario_id: null,
+          funcionario_nome: ehFuncionario.value ? nomeRecebedor : null,
           lote_id: x.lote_id,
           tipo: 'saida',
           quantidade: x.qty,
@@ -362,7 +361,8 @@ async function salvar() {
     const { error } = await supabase.from('movimentacoes').insert({
       produto_id: f.produto_id,
       setor_id: ehLiberacao.value ? f.setor_id : null,
-      funcionario_id: ehFuncionario.value ? f.funcionario_id : null,
+      funcionario_id: null,
+      funcionario_nome: ehFuncionario.value ? nomeRecebedor : null,
       lote_id: lote_id || null,
       tipo: f.tipo,
       quantidade: f.quantidade,
@@ -451,14 +451,13 @@ async function salvar() {
       </div>
 
       <div v-if="ehFuncionario" class="field">
-        <label>Funcionário</label>
-        <Select
-          v-model="form.funcionario_id"
-          :options="funcionarios"
-          option-label="nome"
-          option-value="id"
-          filter
-          placeholder="Quem recebeu?"
+        <label>Quem recebeu?</label>
+        <InputText
+          v-model="form.funcionario_nome"
+          maxlength="80"
+          placeholder="Nome de quem recebeu"
+          autocomplete="off"
+          autofocus
           class="full"
         />
       </div>

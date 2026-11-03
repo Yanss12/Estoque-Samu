@@ -34,7 +34,7 @@ async function carregar() {
       .limit(8),
     supabase
       .from('movimentacoes')
-      .select('id, tipo, quantidade, motivo, data, usuario_id, estorno_de, produto:produtos(nome, controlado), setor:setores(nome)')
+      .select('id, tipo, quantidade, motivo, data, usuario_id, funcionario_nome, funcionario:funcionarios(nome), estorno_de, produto:produtos(nome, controlado), setor:setores(nome)')
       .order('data', { ascending: false })
       .limit(8),
     fetchPerfisMap(),
