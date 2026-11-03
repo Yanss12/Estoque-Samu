@@ -106,7 +106,25 @@ export function adaptarMov(row) {
   }
 }
 
-// Resolve o nível de acesso em modo mock (apenas quando ALMOX_MOCK === true em dev).
+// Resolve o nível de acesso ao Almoxarifado:
+// - Em produção (ALMOX_MOCK = false): consulta a RPC `almox_nivel` no Supabase; falha/ausência => 'nenhum'.
+// - Em dev com ALMOX_MOCK = true: resolve pelo mock sem disparar 404 no console enquanto o backend não existe.
+export async function obterAlmoxNivel(userObj, perfilObj) {
+  if (!userObj) return 'nenhum'
+  if (ALMOX_MOCK) {
+    return resolverNivelMock(userObj, perfilObj)
+  }
+  try {
+    const { data: nivel, error } = await supabase.rpc('almox_nivel')
+    if (!error && ['nenhum', 'consulta', 'total'].includes(nivel)) {
+      return nivel
+    }
+  } catch {
+    // Função ausente ou erro de rede resulta em 'nenhum' (nunca quebra o login)
+  }
+  return 'nenhum'
+}
+
 export function resolverNivelMock(userObj, perfilObj) {
   if (!ALMOX_MOCK) return 'nenhum'
   try {
@@ -851,28 +869,28 @@ function computarViewsMock() {
 }
 
 export async function almoxSelectView(viewName, { eq = {}, gte = {}, lte = {}, order = null, range = null } = {}) {
-  try {
-    let q = supabase.from(viewName).select('*', { count: 'exact' })
-    for (const [k, v] of Object.entries(eq)) {
-      if (v !== undefined && v !== null && v !== '') q = q.eq(k, v)
+  if (!ALMOX_MOCK) {
+    try {
+      let q = supabase.from(viewName).select('*', { count: 'exact' })
+      for (const [k, v] of Object.entries(eq)) {
+        if (v !== undefined && v !== null && v !== '') q = q.eq(k, v)
+      }
+      for (const [k, v] of Object.entries(gte)) {
+        if (v !== undefined && v !== null && v !== '') q = q.gte(k, v)
+      }
+      for (const [k, v] of Object.entries(lte)) {
+        if (v !== undefined && v !== null && v !== '') q = q.lte(k, v)
+      }
+      if (order?.column) {
+        q = q.order(order.column, { ascending: order.ascending ?? true })
+      }
+      if (range && typeof range.from === 'number' && typeof range.to === 'number') {
+        q = q.range(range.from, range.to)
+      }
+      return await q
+    } catch (err) {
+      return { data: null, count: 0, error: err }
     }
-    for (const [k, v] of Object.entries(gte)) {
-      if (v !== undefined && v !== null && v !== '') q = q.gte(k, v)
-    }
-    for (const [k, v] of Object.entries(lte)) {
-      if (v !== undefined && v !== null && v !== '') q = q.lte(k, v)
-    }
-    if (order?.column) {
-      q = q.order(order.column, { ascending: order.ascending ?? true })
-    }
-    if (range && typeof range.from === 'number' && typeof range.to === 'number') {
-      q = q.range(range.from, range.to)
-    }
-    const res = await q
-    if (!res.error) return res
-    if (!ALMOX_MOCK || !objetoAusenteNoBanco(res.error)) return res
-  } catch (err) {
-    if (!ALMOX_MOCK) return { data: null, count: 0, error: err }
   }
 
   const views = computarViewsMock()
@@ -912,12 +930,12 @@ export async function almoxSelectView(viewName, { eq = {}, gte = {}, lte = {}, o
 }
 
 export async function almoxRpc(fnName, params = {}) {
-  try {
-    const res = await supabase.rpc(fnName, params)
-    if (!res.error) return res
-    if (!ALMOX_MOCK || !objetoAusenteNoBanco(res.error)) return res
-  } catch (err) {
-    if (!ALMOX_MOCK) return { data: null, error: err }
+  if (!ALMOX_MOCK) {
+    try {
+      return await supabase.rpc(fnName, params)
+    } catch (err) {
+      return { data: null, error: err }
+    }
   }
 
   try {
@@ -1585,3 +1603,20 @@ function executarRpcMock(fnName, params) {
 export function listarCatalogoGeralMock() {
   return [...mockState.catalogoGeral]
 }
+
+export async function almoxListarCatalogoGeral() {
+  if (ALMOX_MOCK) {
+    return { data: listarCatalogoGeralMock(), error: null }
+  }
+  try {
+    const { data, error } = await supabase
+      .from('produtos')
+      .select('id, nome, categoria, unidade_medida, controlado, ativo')
+      .eq('ativo', true)
+      .order('nome')
+    return { data: data ?? [], error }
+  } catch (err) {
+    return { data: [], error: err }
+  }
+}
+

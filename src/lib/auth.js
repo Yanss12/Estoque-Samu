@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { supabase } from './supabase'
-import { resolverNivelMock } from './almox'
+import { obterAlmoxNivel } from './almox'
 
 // Estado de autenticação compartilhado pela aplicação inteira.
 export const session = ref(null)
@@ -35,29 +35,13 @@ async function loadPerfil() {
     almoxNivel.value = 'nenhum'
     return
   }
-
-  // Suporte de simulação local exclusiva de DEV para inspeção automatizada sem tocar no Supabase
-  if (import.meta.env.DEV && user.value.id === '00000000-0000-0000-0000-000000000099') {
-    return
-  }
-
   const { data } = await supabase
     .from('perfis')
     .select('nome, papel, senha_alterada')
     .eq('id', user.value.id)
     .single()
   perfil.value = data ?? null
-
-  try {
-    const { data: nivel, error: errNivel } = await supabase.rpc('almox_nivel')
-    if (!errNivel && ['nenhum', 'consulta', 'total'].includes(nivel)) {
-      almoxNivel.value = nivel
-    } else {
-      almoxNivel.value = resolverNivelMock(user.value, perfil.value)
-    }
-  } catch {
-    almoxNivel.value = resolverNivelMock(user.value, perfil.value)
-  }
+  almoxNivel.value = await obterAlmoxNivel(user.value, perfil.value)
 }
 
 async function setSession(s) {
@@ -69,31 +53,6 @@ async function setSession(s) {
 // Chamado uma vez no boot, antes de montar o app (ver main.js).
 export async function initAuth() {
   const { data } = await supabase.auth.getSession()
-  if (!data.session && import.meta.env.DEV) {
-    try {
-      const raw = localStorage.getItem('samu.dev.mock_auth')
-      if (raw) {
-        const mock = JSON.parse(raw)
-        const fakeUser = {
-          id: '00000000-0000-0000-0000-000000000099',
-          email: mock.email || 'admin@gmail.com',
-        }
-        session.value = { user: fakeUser }
-        user.value = fakeUser
-        perfil.value = {
-          nome: mock.nome || 'Elaine (RT)',
-          papel: mock.papel || 'admin',
-          senha_alterada: true,
-        }
-        almoxNivel.value = ['nenhum', 'consulta', 'total'].includes(mock.nivel)
-          ? mock.nivel
-          : resolverNivelMock(fakeUser, perfil.value)
-        return
-      }
-    } catch {
-      // Ignora JSON inválido
-    }
-  }
   await setSession(data.session)
   // A sessão é atualizada NA HORA (o router depende dela logo após o login/logout).
   // Só a consulta do perfil é adiada: chamar o Supabase (await) dentro do callback
@@ -113,16 +72,9 @@ export function signIn(email, password) {
   return supabase.auth.signInWithPassword({ email, password })
 }
 
-export async function signOut() {
+export function signOut() {
   almoxNivel.value = 'nenhum'
   limparChavesContexto()
-  if (import.meta.env.DEV) {
-    try {
-      localStorage.removeItem('samu.dev.mock_auth')
-    } catch {
-      // Ignora
-    }
-  }
   return supabase.auth.signOut()
 }
 
