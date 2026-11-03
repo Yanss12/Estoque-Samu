@@ -75,11 +75,14 @@ export function adaptarMov(row) {
   if (!row) return null
   const controlado = row.controlado ?? row.categoria === 'psicotropico'
   const extraPartes = []
+  if (row.motivo === 'reajuste' && row.quantidade_anterior != null && row.quantidade_ajustada != null) {
+    extraPartes.push(`Saldo: ${row.quantidade_anterior} → ${row.quantidade_ajustada} (encontrado: ${row.quantidade_encontrada})`)
+  }
   if (row.documento) extraPartes.push(`Doc: ${row.documento}`)
   if (row.origem && row.tipo === 'entrada') extraPartes.push(`Origem: ${row.origem}`)
   if (row.destino && row.tipo === 'saida') extraPartes.push(`Destino: ${row.destino}`)
   if (row.justificativa) extraPartes.push(`Justificativa: ${row.justificativa}`)
-  if (row.observacao) extraPartes.push(row.observacao)
+  if (row.observacao && row.observacao !== row.justificativa) extraPartes.push(row.observacao)
 
   return {
     ...row,
@@ -90,9 +93,10 @@ export function adaptarMov(row) {
     data: row.data,
     usuario_id: row.usuario_id,
     estorno_de: row.estorno_de,
+    nao_estornavel: row.motivo === 'reajuste' || Boolean(row.transferencia_item_id),
     observacao: extraPartes.join(' · ') || null,
     produto: {
-      nome: row.produto ?? row.produto?.nome ?? '—',
+      nome: row.produto?.nome ?? row.produto ?? '—',
       controlado: Boolean(controlado),
       categoria: row.categoria ?? row.produto?.categoria,
     },

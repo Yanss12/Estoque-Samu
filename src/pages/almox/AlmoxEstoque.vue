@@ -12,6 +12,9 @@ import Button from 'primevue/button'
 import Paginador from '../../components/Paginador.vue'
 import AlmoxProdutoDialog from '../../components/almox/AlmoxProdutoDialog.vue'
 import AlmoxFichaProduto from '../../components/almox/AlmoxFichaProduto.vue'
+import AlmoxEntradaDialog from '../../components/almox/AlmoxEntradaDialog.vue'
+import AlmoxSaidaDialog from '../../components/almox/AlmoxSaidaDialog.vue'
+import AlmoxReajusteDialog from '../../components/almox/AlmoxReajusteDialog.vue'
 import { almoxGerir } from '../../lib/auth'
 import { CATEGORIAS, catLabel } from '../../lib/categorias'
 import { fmtDataLocal, diasAte } from '../../lib/format'
@@ -49,11 +52,15 @@ const situacaoFiltro = ref(null)
 const first = ref(0)
 const rows = ref(15)
 
-// Diálogos de F2
+// Diálogos de F2 e F3
 const produtoDialogVisivel = ref(false)
 const produtoEdit = ref(null)
 const fichaVisivel = ref(false)
 const fichaProduto = ref(null)
+const entradaVisivel = ref(false)
+const saidaVisivel = ref(false)
+const reajusteVisivel = ref(false)
+const produtoOperacao = ref(null)
 
 const temFiltro = computed(
   () => !!(busca.value.trim() || grupoFiltro.value || categoriaFiltro.value || situacaoFiltro.value)
@@ -134,17 +141,24 @@ function abrirFicha(row) {
 }
 
 function abrirOperacao(tipo, row = null) {
-  // Diálogos de Entrada, Saída, Reajuste (F3) e Transferência (F4) serão conectados nos próximos marcos.
-  const rotulos = {
-    entrada: 'Entrada no Almoxarifado',
-    saida: 'Saída do Almoxarifado',
-    transferir: 'Transferência para a Farmácia',
-    reajustar: 'Reajuste de estoque',
+  produtoOperacao.value = row
+  if (tipo === 'entrada') {
+    entradaVisivel.value = true
+    return
   }
+  if (tipo === 'saida') {
+    saidaVisivel.value = true
+    return
+  }
+  if (tipo === 'reajustar') {
+    reajusteVisivel.value = true
+    return
+  }
+  // Transferência entra no Marco F4
   toast.add({
     severity: 'info',
-    summary: rotulos[tipo] || 'Operação',
-    detail: row ? `Selecionado: ${row.nome}` : 'Operação global do Almoxarifado',
+    summary: 'Transferência para a Farmácia',
+    detail: row ? `Selecionado: ${row.nome}` : 'Diálogo de transferência entra no Marco F4.',
     life: 2500,
   })
 }
@@ -472,5 +486,23 @@ onMounted(carregar)
   <AlmoxFichaProduto
     v-model:visible="fichaVisivel"
     :produto="fichaProduto"
+  />
+  <AlmoxEntradaDialog
+    v-model:visible="entradaVisivel"
+    :produtos="linhas"
+    :produto-preselecionado="produtoOperacao"
+    @saved="carregar"
+  />
+  <AlmoxSaidaDialog
+    v-model:visible="saidaVisivel"
+    :produtos="linhas"
+    :produto-preselecionado="produtoOperacao"
+    @saved="carregar"
+  />
+  <AlmoxReajusteDialog
+    v-model:visible="reajusteVisivel"
+    :produtos="linhas"
+    :produto-preselecionado="produtoOperacao"
+    @saved="carregar"
   />
 </template>

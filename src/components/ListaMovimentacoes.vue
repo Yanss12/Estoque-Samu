@@ -17,7 +17,7 @@ const props = defineProps({
 const emit = defineEmits(['estornar'])
 
 function autor(m) {
-  return props.perfisMap[m.usuario_id] || 'usuário removido'
+  return m.usuario_nome || props.perfisMap[m.usuario_id] || 'usuário removido'
 }
 function entrada(m) {
   return m.tipo === 'entrada'
@@ -99,7 +99,7 @@ function quando(d) {
       </div>
       <div v-if="estornavel" class="feed-acao">
         <Button
-          v-if="!ehEstorno(m) && !foiEstornada(m)"
+          v-if="!ehEstorno(m) && !foiEstornada(m) && !m.nao_estornavel && !m.transferencia_item_id"
           icon="pi pi-replay"
           text
           rounded
