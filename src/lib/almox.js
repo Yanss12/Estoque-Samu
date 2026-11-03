@@ -1567,6 +1567,25 @@ function executarRpcMock(fnName, params) {
     if (!item || item.estoque_contado == null) {
       throw criarErroContrato('O item ainda não foi contado.', 'ALMOX_INVENTARIO_ITEM_NAO_CONTADO')
     }
+    const inv = mockState.almoxInventarios.find((i) => i.id === item.inventario_id)
+    if (!inv || inv.status !== 'aberto') {
+      throw criarErroContrato('O inventário não está aberto.', 'ALMOX_INVENTARIO_NAO_ABERTO')
+    }
+    if (item.movimentacao_ajuste_id != null) {
+      throw criarErroContrato('Este item já foi reajustado neste inventário.', 'ALMOX_SEM_DIVERGENCIA')
+    }
+    let saldoAtual = 0
+    if (item.lote_id) {
+      saldoAtual = views.almox_saldo_lote.find((l) => l.lote_id === item.lote_id && l.produto_id === item.produto_id)?.saldo ?? 0
+    } else {
+      saldoAtual = views.almox_saldo_produto.find((p) => p.produto_id === item.produto_id)?.saldo ?? 0
+    }
+    if (saldoAtual !== item.estoque_sistema) {
+      throw criarErroContrato(
+        'O saldo atual do lote mudou desde o momento da contagem. Salve uma nova contagem antes de reajustar.',
+        'ALMOX_INVENTARIO_SALDO_MUDOU'
+      )
+    }
     const res = executarRpcMock('almox_reajustar_estoque', {
       p_produto_id: item.produto_id,
       p_lote_id: item.lote_id,
@@ -1651,6 +1670,17 @@ export async function almoxConsultarLotesFarmacia(produtoId) {
   } catch {
     return []
   }
+}
+
+export function fmtDataHora(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 export async function almoxListarCatalogoGeral() {
