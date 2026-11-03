@@ -1,6 +1,6 @@
 <script setup>
 import Button from 'primevue/button'
-import { motivoLabel } from '../lib/movimentacoes'
+import { motivoLabel, nomeDestinatario } from '../lib/movimentacoes'
 import { tempoRelativo } from '../lib/format'
 
 // Feed de movimentações (Visão geral + Movimentações). Uma linha por registro.
