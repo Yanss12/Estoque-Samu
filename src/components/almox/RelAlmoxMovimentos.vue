@@ -562,14 +562,14 @@ onMounted(async () => {
         </template>
       </Column>
 
-      <Column field="numero_lote" header="Lote / Val." style="width: 11rem">
+      <Column field="numero_lote" header="Lote / Val." style="width: 10.5rem" header-class="col-opc" body-class="col-opc">
         <template #body="{ data }">
           <span class="mono">{{ data.numero_lote || 'sem lote' }}</span>
           <small v-if="data.validade" class="muted"> · {{ fmtDataLocal(data.validade) }}</small>
         </template>
       </Column>
 
-      <Column field="motivo" header="Tipo / Motivo" style="width: 11.5rem">
+      <Column field="motivo" header="Tipo / Motivo" style="width: 11rem" header-class="col-opc" body-class="col-opc">
         <template #body="{ data }">
           <span :style="{ color: data.tipo === 'entrada' ? 'var(--ok-fg)' : 'var(--danger-fg)', fontWeight: 600 }">
             {{ data.tipo === 'entrada' ? 'Entrada' : 'Saída' }}

@@ -331,33 +331,37 @@ onMounted(carregar)
       </div>
 
       <DataTable :value="guia.itens" data-key="item_id" size="small" class="tabela-moderna">
-        <Column header="Produto">
+        <Column header="Produto" style="width: 38%; min-width: 10rem">
           <template #body="{ data }">
-            <span class="prod-nome" :style="{ textDecoration: data.estornada ? 'line-through' : 'none' }">
+            <div class="prod-nome" :style="{ textDecoration: data.estornada ? 'line-through' : 'none' }">
               {{ data.produto }}
-            </span>
+            </div>
+            <div class="muted mobile-only-inline" style="font-size: 0.76rem">
+              lote <span class="mono">{{ data.numero_lote || '—' }}</span>
+              <template v-if="data.validade"> · val. {{ fmtDataLocal(data.validade) }}</template>
+            </div>
           </template>
         </Column>
 
-        <Column header="Categoria" style="width: 9rem" header-class="col-opc" body-class="col-opc">
+        <Column header="Categoria" style="width: 8rem" header-class="col-opc" body-class="col-opc">
           <template #body="{ data }">
             <span class="cat-texto">{{ catLabel(data.categoria) }}</span>
           </template>
         </Column>
 
-        <Column header="Lote" style="width: 9rem">
+        <Column header="Lote" style="width: 8.5rem" header-class="col-opc" body-class="col-opc">
           <template #body="{ data }">
             <span class="mono">{{ data.numero_lote || '—' }}</span>
           </template>
         </Column>
 
-        <Column header="Validade" style="width: 8.5rem">
+        <Column header="Validade" style="width: 8rem" header-class="col-opc" body-class="col-opc">
           <template #body="{ data }">
             <span class="num">{{ fmtDataLocal(data.validade) }}</span>
           </template>
         </Column>
 
-        <Column header="Quantidade" style="width: 7.5rem" header-class="col-num" body-class="col-num">
+        <Column header="Qtd" style="width: 6rem" header-class="col-num" body-class="col-num">
           <template #body="{ data }">
             <span
               class="saldo"

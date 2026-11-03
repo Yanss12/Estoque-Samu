@@ -331,34 +331,40 @@ onMounted(carregar)
         </template>
       </template>
 
-      <Column field="nome" header="Produto" sortable>
+      <Column field="nome" header="Produto" sortable header-class="col-produto" body-class="col-produto">
         <template #body="{ data }">
           <div class="prod-nome">
-            <span>{{ data.nome }}</span>
+            {{ data.nome }}
             <span v-if="data.controlado" class="tag-controlado">Controlado</span>
             <span v-if="!data.ativo" class="tag-estorno">Inativo</span>
           </div>
-          <div v-if="data.codigo_interno || data.localizacao" class="muted" style="font-size: 0.78rem; margin-top: 1px">
-            <span v-if="data.codigo_interno" class="mono">{{ data.codigo_interno }}</span>
-            <span v-if="data.codigo_interno && data.localizacao"> · </span>
-            <span v-if="data.localizacao">{{ data.localizacao }}</span>
+          <div class="muted" style="font-size: 0.78rem; margin-top: 1px">
+            <span v-if="data.codigo_interno" class="mono">{{ data.codigo_interno }} · </span>
+            <span>{{ data.unidade_medida }}</span>
+            <span v-if="data.estoque_minimo > 0"> · mín. {{ data.estoque_minimo }}</span>
+            <span v-if="data.localizacao"> · {{ data.localizacao }}</span>
+            <span v-if="data.proxima_validade" class="mobile-only-inline">
+              · <span class="validade" :class="classeValidade(data.proxima_validade)">
+                val. {{ fmtDataLocal(data.proxima_validade) }}
+              </span>
+            </span>
           </div>
         </template>
       </Column>
 
-      <Column field="categoria" header="Categoria" sortable style="width: 9.5rem" header-class="col-opc" body-class="col-opc">
+      <Column field="categoria" header="Categoria" sortable style="width: 1%; white-space: nowrap" header-class="col-opc" body-class="col-opc">
         <template #body="{ data }">
           <span class="cat-texto">{{ catLabel(data.categoria) }}</span>
         </template>
       </Column>
 
-      <Column field="unidade_medida" header="Unidade" sortable style="width: 7.5rem" header-class="col-opc" body-class="col-opc">
+      <Column field="unidade_medida" header="Unid." sortable style="width: 1%; white-space: nowrap" header-class="col-opc col-opc-md" body-class="col-opc col-opc-md">
         <template #body="{ data }">
           <span class="cat-texto">{{ data.unidade_medida }}</span>
         </template>
       </Column>
 
-      <Column field="saldo_disponivel" header="Disponível" sortable style="width: 7.5rem" header-class="col-num" body-class="col-num">
+      <Column field="saldo_disponivel" header="Disponível" sortable style="width: 1%; white-space: nowrap" header-class="col-num" body-class="col-num">
         <template #body="{ data }">
           <span
             class="saldo"
@@ -377,13 +383,13 @@ onMounted(carregar)
         </template>
       </Column>
 
-      <Column field="estoque_minimo" header="Mínimo" sortable style="width: 6.5rem" header-class="col-num col-opc" body-class="col-num col-opc">
+      <Column field="estoque_minimo" header="Mín." sortable style="width: 1%; white-space: nowrap" header-class="col-num col-opc col-opc-md" body-class="col-num col-opc col-opc-md">
         <template #body="{ data }">
           <span class="num muted">{{ data.estoque_minimo }}</span>
         </template>
       </Column>
 
-      <Column field="proxima_validade" header="Próx. validade" sortable style="width: 10.5rem">
+      <Column field="proxima_validade" header="Validade" sortable style="width: 1%; white-space: nowrap" header-class="col-opc" body-class="col-opc">
         <template #body="{ data }">
           <span
             v-if="data.proxima_validade"
@@ -396,7 +402,7 @@ onMounted(carregar)
         </template>
       </Column>
 
-      <Column style="width: 12.5rem" header-class="col-num">
+      <Column style="width: 1%; white-space: nowrap" header-class="col-num" body-class="col-acoes">
         <template #header><span class="sr-only">Ações</span></template>
         <template #body="{ data }">
           <div class="acoes">

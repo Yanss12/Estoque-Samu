@@ -224,7 +224,7 @@ onMounted(() => {
       {{ busca || categoriaFiltro ? 'Nenhum produto corresponde à busca.' : 'Nenhum produto cadastrado. Use "Novo produto" para começar.' }}
     </template>
 
-    <Column field="nome" header="Produto" sortable>
+    <Column field="nome" header="Produto" sortable header-class="col-produto" body-class="col-produto">
       <template #body="{ data }">
         <span class="prod-nome">
           {{ data.nome }}
@@ -232,17 +232,17 @@ onMounted(() => {
         </span>
       </template>
     </Column>
-    <Column field="categoria" header="Categoria" sortable style="width: 9.5rem" header-class="col-opc" body-class="col-opc">
+    <Column field="categoria" header="Categoria" sortable style="width: 1%; white-space: nowrap" header-class="col-opc" body-class="col-opc">
       <template #body="{ data }">
         <span class="cat-texto">{{ catLabel(data.categoria) }}</span>
       </template>
     </Column>
-    <Column field="unidade_medida" header="Unidade" sortable style="width: 7.5rem" header-class="col-opc" body-class="col-opc">
+    <Column field="unidade_medida" header="Unidade" sortable style="width: 1%; white-space: nowrap" header-class="col-opc col-opc-md" body-class="col-opc col-opc-md">
       <template #body="{ data }">
         <span class="cat-texto">{{ data.unidade_medida }}</span>
       </template>
     </Column>
-    <Column field="saldo_disponivel" header="Disponível" sortable style="width: 7.5rem" header-class="col-num" body-class="col-num">
+    <Column field="saldo_disponivel" header="Disponível" sortable style="width: 1%; white-space: nowrap" header-class="col-num" body-class="col-num">
       <template #body="{ data }">
         <span
           class="saldo"
@@ -256,12 +256,12 @@ onMounted(() => {
         </span>
       </template>
     </Column>
-    <Column field="estoque_minimo" header="Mínimo" sortable style="width: 6.5rem" header-class="col-num col-opc" body-class="col-num col-opc">
+    <Column field="estoque_minimo" header="Mínimo" sortable style="width: 1%; white-space: nowrap" header-class="col-num col-opc col-opc-md" body-class="col-num col-opc col-opc-md">
       <template #body="{ data }">
         <span class="num muted">{{ data.estoque_minimo }}</span>
       </template>
     </Column>
-    <Column header="Próx. validade" style="width: 10.5rem">
+    <Column header="Próx. validade" style="width: 1%; white-space: nowrap" header-class="col-opc" body-class="col-opc">
       <template #body="{ data }">
         <span
           v-if="proxValidadeFmt(data.produto_id)"
@@ -273,7 +273,7 @@ onMounted(() => {
         <span v-else class="muted" title="Sem lote com validade">—</span>
       </template>
     </Column>
-    <Column style="width: 9.5rem" header-class="col-num">
+    <Column style="width: 1%; white-space: nowrap" header-class="col-num">
       <template #header><span class="sr-only">Ações</span></template>
       <template #body="{ data }">
         <div class="acoes">

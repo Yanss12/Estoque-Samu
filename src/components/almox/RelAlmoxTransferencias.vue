@@ -185,7 +185,7 @@ onMounted(carregar)
       <Column field="transferencia_id" header="Guia" sortable style="width: 5.5rem">
         <template #body="{ data }"><span class="mono">#{{ data.transferencia_id }}</span></template>
       </Column>
-      <Column field="data" header="Data/Hora" sortable style="width: 9.5rem">
+      <Column field="data" header="Data/Hora" sortable style="width: 9rem" header-class="col-opc" body-class="col-opc">
         <template #body="{ data }">{{ fmtDataHora(data.data) }}</template>
       </Column>
       <Column field="produto" header="Produto" sortable>
@@ -194,7 +194,7 @@ onMounted(carregar)
           <small class="muted"> · {{ catLabel(data.categoria) }}</small>
         </template>
       </Column>
-      <Column field="numero_lote" header="Lote / Val." style="width: 11rem">
+      <Column field="numero_lote" header="Lote / Val." style="width: 10.5rem" header-class="col-opc" body-class="col-opc">
         <template #body="{ data }">
           <span class="mono">{{ data.numero_lote || 'sem lote' }}</span>
           <small v-if="data.validade" class="muted"> · {{ fmtDataLocal(data.validade) }}</small>

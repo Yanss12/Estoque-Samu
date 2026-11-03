@@ -251,7 +251,7 @@ onMounted(carregar)
       class="tabela-moderna"
     >
       <template #empty>Nenhum registro de inventário ou reajuste encontrado.</template>
-      <Column field="origem" header="Origem" sortable style="width: 13rem">
+      <Column field="origem" header="Origem" sortable style="width: 12rem" header-class="col-opc" body-class="col-opc">
         <template #body="{ data }">
           <span class="prod-nome">{{ data.origem }}</span>
           <div v-if="data.data" class="muted" style="font-size: 0.75rem">{{ fmtDataHora(data.data) }}</div>

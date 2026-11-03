@@ -89,7 +89,7 @@ onMounted(carregar)
       <Column field="produto" header="Produto" sortable>
         <template #body="{ data }"><span class="prod-nome">{{ data.produto }}</span></template>
       </Column>
-      <Column field="numero_lote" header="Lote" style="width: 9.5rem">
+      <Column field="numero_lote" header="Lote" style="width: 8.5rem" header-class="col-opc" body-class="col-opc">
         <template #body="{ data }"><span class="mono">{{ data.numero_lote || 'sem nº' }}</span></template>
       </Column>
       <Column field="validade" header="Validade" sortable style="width: 11.5rem">
