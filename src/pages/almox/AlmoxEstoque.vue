@@ -15,6 +15,7 @@ import AlmoxFichaProduto from '../../components/almox/AlmoxFichaProduto.vue'
 import AlmoxEntradaDialog from '../../components/almox/AlmoxEntradaDialog.vue'
 import AlmoxSaidaDialog from '../../components/almox/AlmoxSaidaDialog.vue'
 import AlmoxReajusteDialog from '../../components/almox/AlmoxReajusteDialog.vue'
+import AlmoxTransferenciaDialog from '../../components/almox/AlmoxTransferenciaDialog.vue'
 import { almoxGerir } from '../../lib/auth'
 import { CATEGORIAS, catLabel } from '../../lib/categorias'
 import { fmtDataLocal, diasAte } from '../../lib/format'
@@ -60,6 +61,7 @@ const fichaProduto = ref(null)
 const entradaVisivel = ref(false)
 const saidaVisivel = ref(false)
 const reajusteVisivel = ref(false)
+const transferenciaVisivel = ref(false)
 const produtoOperacao = ref(null)
 
 const temFiltro = computed(
@@ -154,13 +156,9 @@ function abrirOperacao(tipo, row = null) {
     reajusteVisivel.value = true
     return
   }
-  // Transferência entra no Marco F4
-  toast.add({
-    severity: 'info',
-    summary: 'Transferência para a Farmácia',
-    detail: row ? `Selecionado: ${row.nome}` : 'Diálogo de transferência entra no Marco F4.',
-    life: 2500,
-  })
+  if (tipo === 'transferir') {
+    transferenciaVisivel.value = true
+  }
 }
 
 function diasValidade(dataISO) {
@@ -501,6 +499,12 @@ onMounted(carregar)
   />
   <AlmoxReajusteDialog
     v-model:visible="reajusteVisivel"
+    :produtos="linhas"
+    :produto-preselecionado="produtoOperacao"
+    @saved="carregar"
+  />
+  <AlmoxTransferenciaDialog
+    v-model:visible="transferenciaVisivel"
     :produtos="linhas"
     :produto-preselecionado="produtoOperacao"
     @saved="carregar"

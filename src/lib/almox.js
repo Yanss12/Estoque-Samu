@@ -1608,6 +1608,51 @@ export function listarCatalogoGeralMock() {
   return [...mockState.catalogoGeral]
 }
 
+// Identifica se uma movimentação da Farmácia veio de transferência automática do Almoxarifado
+// sem exigir coluna nova no .select() enquanto a migration M-A4 não estiver aplicada.
+export function transferenciaAlmoxTag(m) {
+  if (!m) return null
+  const match = String(m.observacao || '').match(/^Transferência do Almoxarifado #(\d+)/i)
+  if (match) return `Transferência do Almoxarifado #${match[1]}`
+  if (m.motivo === 'almoxarifado' && m.transferencia_item_id != null) {
+    return `Transferência do Almoxarifado #${m.transferencia_item_id}`
+  }
+  return null
+}
+
+// Consulta lotes da Farmácia para um produto (exibe saldo atual na Farmácia dentro do AlmoxTransferenciaDialog)
+export async function almoxConsultarLotesFarmacia(produtoId) {
+  if (!produtoId) return []
+  if (ALMOX_MOCK) {
+    // No mock, calcula a partir das transferências efetivas já feitas para a Farmácia
+    const views = computarViewsMock()
+    const mapa = new Map()
+    for (const t of views.almox_transferencias_detalhe) {
+      if (t.estornada || Number(t.produto_id) !== Number(produtoId)) continue
+      const chave = (t.numero_lote || '').toUpperCase()
+      const atual = mapa.get(chave) || {
+        produto_id: t.produto_id,
+        numero_lote: t.numero_lote,
+        validade: t.validade,
+        saldo: 0,
+      }
+      atual.saldo += Number(t.quantidade || 0)
+      mapa.set(chave, atual)
+    }
+    return [...mapa.values()]
+  }
+  try {
+    const { data, error } = await supabase
+      .from('saldo_por_lote')
+      .select('lote_id, produto_id, numero_lote, validade, saldo')
+      .eq('produto_id', produtoId)
+    if (error) return []
+    return data ?? []
+  } catch {
+    return []
+  }
+}
+
 export async function almoxListarCatalogoGeral() {
   if (ALMOX_MOCK) {
     return { data: listarCatalogoGeralMock(), error: null }

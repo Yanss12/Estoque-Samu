@@ -6,6 +6,7 @@ import Column from 'primevue/column'
 import { supabase } from '../lib/supabase'
 import { fetchPerfisMap } from '../lib/perfis'
 import { motivoLabel, nomeDestinatario } from '../lib/movimentacoes'
+import { transferenciaAlmoxTag } from '../lib/almox'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -102,8 +103,8 @@ function autor(m) {
       </Column>
       <Column header="Motivo">
         <template #body="{ data }">
-          <span v-if="data.estorno_de" class="tag-estorno" style="margin-right: 0.35rem">Estorno</span>{{ motivoLabel(data.motivo) }}<span v-if="data.setor?.nome" class="muted"> → {{ data.setor.nome }}</span><span v-else-if="nomeDestinatario(data)" class="muted"> → {{ nomeDestinatario(data) }}</span>
-          <div v-if="data.observacao" class="muted" style="font-size: 0.8rem">{{ data.observacao }}</div>
+          <span v-if="data.estorno_de" class="tag-estorno" style="margin-right: 0.35rem">Estorno</span><span v-if="transferenciaAlmoxTag(data)" class="tag-estorno" style="margin-right: 0.35rem">{{ transferenciaAlmoxTag(data) }}</span>{{ motivoLabel(data.motivo) }}<span v-if="data.setor?.nome" class="muted"> → {{ data.setor.nome }}</span><span v-else-if="nomeDestinatario(data)" class="muted"> → {{ nomeDestinatario(data) }}</span>
+          <div v-if="data.observacao && !transferenciaAlmoxTag(data)" class="muted" style="font-size: 0.8rem">{{ data.observacao }}</div>
         </template>
       </Column>
       <Column header="Por">

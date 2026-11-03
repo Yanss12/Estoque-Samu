@@ -429,6 +429,9 @@ async function salvar() {
         <div class="field">
           <label>{{ form.tipo === 'entrada' ? 'Origem' : 'Tipo de saída' }}</label>
           <Select v-model="form.motivo" :options="motivoOpcoes" option-label="label" option-value="value" class="full" />
+          <small v-if="form.tipo === 'entrada' && form.motivo === 'almoxarifado'">
+            Itens recebidos por transferência do sistema já entram sozinhos. Não lance de novo.
+          </small>
         </div>
         <!-- Quantidade só aparece quando NÃO é saída multi-lote (entrada ou saída de permanente) -->
         <div v-if="!usaDistribuicao" class="field" style="width: 9rem">

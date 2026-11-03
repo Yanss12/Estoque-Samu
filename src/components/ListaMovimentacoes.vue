@@ -2,6 +2,7 @@
 import Button from 'primevue/button'
 import { motivoLabel, nomeDestinatario } from '../lib/movimentacoes'
 import { tempoRelativo } from '../lib/format'
+import { transferenciaAlmoxTag } from '../lib/almox'
 
 // Feed de movimentações (Visão geral + Movimentações). Uma linha por registro.
 const props = defineProps({
@@ -79,6 +80,7 @@ function quando(d) {
           <span v-if="m.produto?.controlado" class="tag-controlado">Controlado</span>
           <span v-if="ehEstorno(m)" class="tag-estorno">Estorno</span>
           <span v-else-if="foiEstornada(m)" class="tag-estorno">Estornada</span>
+          <span v-if="transferenciaAlmoxTag(m)" class="tag-estorno">{{ transferenciaAlmoxTag(m) }}</span>
         </div>
         <div class="feed-sub">
           <template v-if="ehEstorno(m)">Desfaz {{ entrada(m) ? 'saída' : 'entrada' }} · {{ destino(m) }}</template>
@@ -99,7 +101,7 @@ function quando(d) {
       </div>
       <div v-if="estornavel" class="feed-acao">
         <Button
-          v-if="!ehEstorno(m) && !foiEstornada(m) && !m.nao_estornavel && !m.transferencia_item_id"
+          v-if="!ehEstorno(m) && !foiEstornada(m) && !m.nao_estornavel && !m.transferencia_item_id && !transferenciaAlmoxTag(m)"
           icon="pi pi-replay"
           text
           rounded
