@@ -315,7 +315,7 @@ const mockState = {
       lote_id: 5,
       tipo: 'entrada',
       motivo: 'saldo_inicial',
-      quantidade: 15,
+      quantidade: 20,
       origem: 'Implantação do Módulo Almoxarifado',
       destino: null,
       documento: 'INV-001',
@@ -482,6 +482,56 @@ const mockState = {
       usuario_id: '00000000-0000-0000-0000-000000000001',
       usuario_nome: 'Elaine (RT Principal)',
       data: tsMenosHoras(24),
+    },
+    {
+      id: 12,
+      operacao_id: '11111111-1111-4111-8111-111111111111',
+      produto_id: 102,
+      lote_id: 3,
+      tipo: 'saida',
+      motivo: 'perda_avaria',
+      quantidade: 4,
+      origem: null,
+      destino: null,
+      documento: 'Auto Avaria 03/2026',
+      data_documento: null,
+      justificativa: 'Frascos danificados no transporte interno',
+      observacao: null,
+      estorno_de: null,
+      transferencia_item_id: null,
+      inventario_item_id: null,
+      quantidade_anterior: null,
+      quantidade_encontrada: null,
+      quantidade_ajustada: null,
+      diferenca: null,
+      usuario_id: '00000000-0000-0000-0000-000000000001',
+      usuario_nome: 'Elaine (RT Principal)',
+      data: tsMenosHoras(18),
+    },
+    {
+      id: 13,
+      operacao_id: '11111111-1111-4111-8111-111111111112',
+      produto_id: 103,
+      lote_id: 5,
+      tipo: 'saida',
+      motivo: 'vencido',
+      quantidade: 5,
+      origem: null,
+      destino: null,
+      documento: 'Termo Descarte 02/2026',
+      data_documento: null,
+      justificativa: 'Baixa parcial para coleta de resíduos de saúde',
+      observacao: null,
+      estorno_de: null,
+      transferencia_item_id: null,
+      inventario_item_id: null,
+      quantidade_anterior: null,
+      quantidade_encontrada: null,
+      quantidade_ajustada: null,
+      diferenca: null,
+      usuario_id: '00000000-0000-0000-0000-000000000001',
+      usuario_nome: 'Elaine (RT Principal)',
+      data: tsMenosHoras(12),
     },
   ],
   almoxTransferencias: [
@@ -1001,9 +1051,11 @@ function executarRpcMock(fnName, params) {
     for (const m of views.almox_movimentacoes_detalhe) {
       if (m.tipo !== 'saida' || !m.efetiva) continue
       if (m.dia < inicio || m.dia > fim) continue
-      if (!['transferencia_farmacia', 'outra_unidade'].includes(m.motivo)) continue
-      const destino = m.motivo === 'transferencia_farmacia' ? 'Farmácia COMUE (distribuição interna)' : m.destino || 'Outra unidade'
-      const chave = `${m.produto_id}|${m.motivo}|${destino}`
+      const destino =
+        m.motivo === 'transferencia_farmacia'
+          ? 'Farmácia COMUE (distribuição interna)'
+          : m.destino ?? null
+      const chave = `${m.produto_id}|${m.motivo}|${destino ?? ''}`
       const atual = mapa.get(chave) || {
         produto_id: m.produto_id,
         produto: m.produto,
@@ -1016,7 +1068,12 @@ function executarRpcMock(fnName, params) {
       atual.quantidade += m.quantidade
       mapa.set(chave, atual)
     }
-    return [...mapa.values()]
+    return [...mapa.values()].sort(
+      (a, b) =>
+        String(a.produto).localeCompare(String(b.produto), 'pt-BR') ||
+        String(a.motivo).localeCompare(String(b.motivo), 'pt-BR') ||
+        String(a.destino || '').localeCompare(String(b.destino || ''), 'pt-BR')
+    )
   }
 
   if (fnName === 'almox_cadastrar_produto') {

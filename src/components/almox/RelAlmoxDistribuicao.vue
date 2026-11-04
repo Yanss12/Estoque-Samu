@@ -49,13 +49,19 @@ const linhas = computed(() =>
 
 const totalOutrasUnidades = computed(() =>
   linhas.value
-    .filter((r) => r.motivo !== 'transferencia_farmacia')
+    .filter((r) => r.motivo === 'outra_unidade')
     .reduce((s, r) => s + Number(r.quantidade || 0), 0)
 )
 
 const totalDistribuicaoInterna = computed(() =>
   linhas.value
     .filter((r) => r.motivo === 'transferencia_farmacia')
+    .reduce((s, r) => s + Number(r.quantidade || 0), 0)
+)
+
+const totalPerdasVencidosOutros = computed(() =>
+  linhas.value
+    .filter((r) => !['outra_unidade', 'transferencia_farmacia'].includes(r.motivo))
     .reduce((s, r) => s + Number(r.quantidade || 0), 0)
 )
 
@@ -69,7 +75,7 @@ const linhasExport = computed(() =>
     r.motivo === 'transferencia_farmacia'
       ? 'Distribuição interna (Transferência p/ Farmácia)'
       : almoxMotivoLabel(r.motivo),
-    r.destino || '',
+    r.destino || almoxMotivoLabel(r.motivo),
     Number(r.quantidade),
   ])
 )
@@ -143,7 +149,8 @@ onMounted(carregar)
   <p class="page-sub">
     Saídas efetivas por destino (estornos descontados) · Outras unidades:
     <strong>{{ totalOutrasUnidades }}</strong> un. · Distribuição interna p/ Farmácia COMUE (não é somada ao consumo):
-    <strong>{{ totalDistribuicaoInterna }}</strong> un.
+    <strong>{{ totalDistribuicaoInterna }}</strong> un. · Perdas, vencidos e outros (não somados ao consumo):
+    <strong>{{ totalPerdasVencidosOutros }}</strong> un.
   </p>
 
   <div class="card-panel tabela">
@@ -174,7 +181,12 @@ onMounted(carregar)
           </span>
         </template>
       </Column>
-      <Column field="destino" header="Destino" sortable />
+      <Column field="destino" header="Destino" sortable>
+        <template #body="{ data }">
+          <span v-if="data.destino">{{ data.destino }}</span>
+          <span v-else class="muted">{{ almoxMotivoLabel(data.motivo) }}</span>
+        </template>
+      </Column>
       <Column
         field="quantidade"
         header="Qtd"
