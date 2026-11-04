@@ -261,7 +261,7 @@ onMounted(() => {
         <span class="num muted">{{ data.estoque_minimo }}</span>
       </template>
     </Column>
-    <Column header="Próx. validade" style="width: 1%; white-space: nowrap" header-class="col-opc" body-class="col-opc">
+    <Column header="Próx. validade" style="width: 1%; white-space: nowrap">
       <template #body="{ data }">
         <span
           v-if="proxValidadeFmt(data.produto_id)"
