@@ -330,6 +330,7 @@ h3 {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  margin-left: auto;
 }
 
 /* Alternador de contexto (Farmácia | Almoxarifado) na topbar */

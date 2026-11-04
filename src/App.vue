@@ -100,12 +100,6 @@ async function sair() {
 
     <div class="main">
       <header class="topbar">
-        <span v-if="contexto === 'almoxarifado' && almoxVer" class="local">
-          <strong>Almoxarifado da Saúde</strong> · estoque de retaguarda
-        </span>
-        <span v-else class="local">
-          <strong>Farmácia Central</strong> · estoque único SAMU / PSM
-        </span>
         <div class="right">
           <ContextoSwitch v-if="almoxVer" />
           <Button
