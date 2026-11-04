@@ -405,7 +405,7 @@ async function salvar() {
       </div>
 
       <small class="muted" style="display: block; margin-bottom: 0.85rem">
-        Lotes existentes no Almoxarifado mantêm sua validade original (erro de validade corrige-se por estorno e relançamento).
+        Lotes existentes no Almoxarifado mantêm sua validade original (erro de validade pode ser corrigido na ficha do produto).
       </small>
 
       <div class="field" style="margin-bottom: 0">

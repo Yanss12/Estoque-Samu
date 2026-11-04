@@ -3,45 +3,65 @@ import { ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Button from 'primevue/button'
 import { catLabel } from '../../lib/categorias'
 import { fmtDataLocal } from '../../lib/format'
+import { almoxGerir } from '../../lib/auth'
 import { almoxSelectView, almoxMotivoLabel } from '../../lib/almox'
+import AlmoxCorrigirValidadeDialog from './AlmoxCorrigirValidadeDialog.vue'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
   produto: { type: Object, default: null },
 })
-const emit = defineEmits(['update:visible'])
+const emit = defineEmits(['update:visible', 'saved'])
 
 const lotes = ref([])
 const movs = ref([])
 const carregando = ref(false)
+const corrigirValidadeVisivel = ref(false)
+const loteParaCorrigir = ref(null)
+
+async function carregarFicha() {
+  if (!props.produto) return
+  carregando.value = true
+  const pid = props.produto.produto_id
+  try {
+    const [lo, mo] = await Promise.all([
+      almoxSelectView('almox_saldo_lote', {
+        eq: { produto_id: pid },
+        order: { column: 'validade', ascending: true },
+      }),
+      almoxSelectView('almox_movimentacoes_detalhe', {
+        eq: { produto_id: pid },
+        order: { column: 'data', ascending: false },
+        range: { from: 0, to: 9 },
+      }),
+    ])
+    lotes.value = (lo.data ?? []).filter((l) => Number(l.saldo) > 0)
+    movs.value = mo.data ?? []
+  } finally {
+    carregando.value = false
+  }
+}
 
 watch(
   () => props.visible,
   async (aberto) => {
     if (!aberto || !props.produto) return
-    carregando.value = true
-    const pid = props.produto.produto_id
-    try {
-      const [lo, mo] = await Promise.all([
-        almoxSelectView('almox_saldo_lote', {
-          eq: { produto_id: pid },
-          order: { column: 'validade', ascending: true },
-        }),
-        almoxSelectView('almox_movimentacoes_detalhe', {
-          eq: { produto_id: pid },
-          order: { column: 'data', ascending: false },
-          range: { from: 0, to: 9 },
-        }),
-      ])
-      lotes.value = (lo.data ?? []).filter((l) => Number(l.saldo) > 0)
-      movs.value = mo.data ?? []
-    } finally {
-      carregando.value = false
-    }
+    await carregarFicha()
   }
 )
+
+function abrirCorrigirValidade(lote) {
+  loteParaCorrigir.value = lote
+  corrigirValidadeVisivel.value = true
+}
+
+async function aoCorrigirValidade() {
+  await carregarFicha()
+  emit('saved')
+}
 
 function fmtDataHora(d) {
   if (!d) return '—'
@@ -113,6 +133,20 @@ function classeValidadeLote(l) {
           <span class="saldo">{{ data.saldo }}</span>
         </template>
       </Column>
+      <Column v-if="almoxGerir" style="width: 1%; white-space: nowrap" header-class="col-num" body-class="col-num">
+        <template #header><span class="sr-only">Ações</span></template>
+        <template #body="{ data }">
+          <Button
+            label="Corrigir validade"
+            icon="pi pi-calendar"
+            size="small"
+            text
+            severity="secondary"
+            :aria-label="`Corrigir validade do lote ${data.numero_lote}`"
+            @click="abrirCorrigirValidade(data)"
+          />
+        </template>
+      </Column>
     </DataTable>
 
     <h3 class="ficha-sec">
@@ -166,5 +200,12 @@ function classeValidadeLote(l) {
         </template>
       </Column>
     </DataTable>
+
+    <AlmoxCorrigirValidadeDialog
+      v-model:visible="corrigirValidadeVisivel"
+      :produto="produto"
+      :lote="loteParaCorrigir"
+      @saved="aoCorrigirValidade"
+    />
   </Dialog>
 </template>

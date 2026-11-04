@@ -104,6 +104,10 @@ async function carregar() {
     if (resInd.data) {
       indicadores.value = { ...indicadores.value, ...resInd.data }
     }
+    if (fichaProduto.value) {
+      const atualizado = linhas.value.find((r) => r.produto_id === fichaProduto.value.produto_id)
+      if (atualizado) fichaProduto.value = atualizado
+    }
   } catch (err) {
     toast.add({
       severity: 'error',
@@ -490,6 +494,7 @@ onMounted(carregar)
   <AlmoxFichaProduto
     v-model:visible="fichaVisivel"
     :produto="fichaProduto"
+    @saved="carregar"
   />
   <AlmoxEntradaDialog
     v-model:visible="entradaVisivel"

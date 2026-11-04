@@ -67,6 +67,18 @@ export function mensagemErroAlmox(err) {
     const base = err?.message || 'Não foi possível estornar a transferência.'
     return `${base} Os itens já foram usados na Farmácia; o estorno de transferência consumida é bloqueado.`
   }
+  if (cod === 'ALMOX_LOTE_JA_TRANSFERIDO') {
+    return 'Lote já transferido para a Farmácia: não é possível corrigir a validade.'
+  }
+  if (cod === 'ALMOX_VALIDADE_IGUAL') {
+    return 'A nova validade informada é igual à validade atual do lote.'
+  }
+  if (cod === 'ALMOX_JUSTIFICATIVA_CURTA' || cod === 'ALMOX_JUSTIFICATIVA_OBRIGATORIA') {
+    return err?.message || 'Informe uma justificativa com no mínimo 10 caracteres.'
+  }
+  if (cod === 'ALMOX_LOTE_INEXISTENTE') {
+    return 'Lote não encontrado no Almoxarifado.'
+  }
   return mensagemErro(err)
 }
 
@@ -1174,7 +1186,7 @@ function executarRpcMock(fnName, params) {
         if (loteExistente) {
           if (loteExistente.validade !== it.validade) {
             throw criarErroContrato(
-              `O lote ${numLote} já existe com a validade ${loteExistente.validade} (informada: ${it.validade}). Para corrigir erro de validade, estorne a entrada original e relance.`,
+              `O lote ${numLote} já existe com a validade ${loteExistente.validade} (informada: ${it.validade}). Para corrigir erro de validade, use "Corrigir validade" na ficha do produto.`,
               'ALMOX_LOTE_VALIDADE_DIVERGENTE'
             )
           }
@@ -1675,6 +1687,52 @@ function executarRpcMock(fnName, params) {
     inv.finalizado_por_nome = 'Elaine (RT Principal)'
     if (params.p_observacao) inv.observacao = params.p_observacao.trim()
     return null
+  }
+
+  if (fnName === 'almox_corrigir_validade_lote') {
+    const loteId = Number(params.p_lote_id)
+    const novaValidade = String(params.p_nova_validade || '').trim()
+    const just = String(params.p_justificativa || '').trim()
+    if (!loteId) {
+      throw criarErroContrato('Informe o lote a corrigir.', 'ALMOX_LOTE_INEXISTENTE', 'P0002')
+    }
+    const lote = mockState.almoxLotes.find((l) => l.id === loteId)
+    if (!lote) {
+      throw criarErroContrato('Lote não encontrado no Almoxarifado.', 'ALMOX_LOTE_INEXISTENTE', 'P0002')
+    }
+    if (just.length < 10) {
+      throw criarErroContrato(
+        'Justificativa obrigatória com no mínimo 10 caracteres.',
+        'ALMOX_JUSTIFICATIVA_CURTA'
+      )
+    }
+    if (!novaValidade) {
+      throw criarErroContrato('Informe a nova data de validade.', 'ALMOX_DADO_INVALIDO')
+    }
+    if (novaValidade === lote.validade) {
+      throw criarErroContrato(
+        'A nova validade informada é igual à validade atual do lote.',
+        'ALMOX_VALIDADE_IGUAL'
+      )
+    }
+    const jaTransferido = views.almox_transferencias_detalhe.some(
+      (t) => !t.estornada && Number(t.almox_lote_id) === lote.id
+    )
+    if (jaTransferido) {
+      throw criarErroContrato(
+        'Lote já transferido para a Farmácia: não é possível corrigir a validade.',
+        'ALMOX_LOTE_JA_TRANSFERIDO'
+      )
+    }
+    const validadeAnterior = lote.validade
+    lote.validade = novaValidade
+    return {
+      lote_id: lote.id,
+      produto_id: lote.produto_id,
+      numero_lote: lote.numero_lote,
+      validade_anterior: validadeAnterior,
+      validade_nova: novaValidade,
+    }
   }
 
   throw criarErroContrato(`Função ${fnName} não implementada no mock.`, 'ALMOX_DADO_INVALIDO')
