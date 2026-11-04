@@ -15,8 +15,16 @@ export const MOTIVOS_SAIDA = [
   { value: 'outros', label: 'Outros (justificar)' },
 ]
 
-// Motivos que só o servidor gera (não aparecem como opção manual).
-const MOTIVOS_SISTEMA = [{ value: 'ajuste_auditoria', label: 'Ajuste de auditoria' }]
+// Motivos que só o servidor gera na Farmácia + rótulos do Almoxarifado para reuso em ListaMovimentacoes/EstornoDialog.
+const MOTIVOS_SISTEMA = [
+  { value: 'ajuste_auditoria', label: 'Ajuste de auditoria' },
+  { value: 'recebimento', label: 'Recebimento' },
+  { value: 'outra_unidade', label: 'Outra unidade' },
+  { value: 'perda_avaria', label: 'Perda / avaria' },
+  { value: 'transferencia_farmacia', label: 'Transferência p/ Farmácia' },
+  { value: 'reajuste', label: 'Reajuste de estoque' },
+  { value: 'saldo_inicial', label: 'Saldo inicial' },
+]
 
 // Motivos de saída que podem tirar saldo de lote vencido.
 export const MOTIVOS_LOTE_VENCIDO = ['avariado', 'vencido']

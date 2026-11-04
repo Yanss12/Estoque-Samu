@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
@@ -7,7 +7,9 @@ import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import LogoSamu from './components/LogoSamu.vue'
 import TrocarSenha from './components/TrocarSenha.vue'
-import { user, perfil, precisaTrocarSenha, podeAuditar, signOut } from './lib/auth'
+import ContextoSwitch from './components/almox/ContextoSwitch.vue'
+import { user, perfil, precisaTrocarSenha, podeAuditar, almoxVer, signOut } from './lib/auth'
+import { contexto } from './lib/contexto'
 import { isDark, toggleTheme } from './lib/theme'
 
 const router = useRouter()
@@ -23,7 +25,27 @@ const nav = [
   { name: 'relatorios', label: 'Relatórios', icon: 'pi pi-chart-bar' },
   { name: 'auditoria', label: 'Auditoria', icon: 'pi pi-clipboard', visivel: () => podeAuditar.value },
 ]
-const navVisivel = computed(() => nav.filter((i) => !i.visivel || i.visivel()))
+
+const navAlmox = [
+  { name: 'almox-estoque', label: 'Estoque', icon: 'pi pi-box' },
+  { name: 'almox-movimentacoes', label: 'Movimentações', icon: 'pi pi-arrow-right-arrow-left' },
+  { name: 'almox-transferencias', label: 'Transferências', icon: 'pi pi-send' },
+  { name: 'almox-inventario', label: 'Inventário', icon: 'pi pi-clipboard' },
+  { name: 'almox-relatorios', label: 'Relatórios', icon: 'pi pi-chart-bar' },
+]
+
+const navVisivel = computed(() =>
+  contexto.value === 'almoxarifado' && almoxVer.value
+    ? navAlmox
+    : nav.filter((i) => !i.visivel || i.visivel())
+)
+
+// Se o nível do usuário cair para 'nenhum' com o contexto Almoxarifado ativo, volta ao dashboard.
+watch(almoxVer, (pode) => {
+  if (!pode && contexto.value === 'almoxarifado') {
+    router.replace({ name: 'dashboard' })
+  }
+})
 
 async function sair() {
   await signOut()
@@ -53,6 +75,14 @@ async function sair() {
         <LogoSamu :size="28" />
         <span>Estoque SAMU</span>
       </div>
+      <div
+        v-if="contexto === 'almoxarifado' && almoxVer"
+        class="sidebar-ctx-chip"
+        title="Almoxarifado da Saúde"
+      >
+        <i class="pi pi-building" aria-hidden="true" />
+        <span>Almoxarifado</span>
+      </div>
       <nav class="nav" aria-label="Principal">
         <router-link
           v-for="item in navVisivel"
@@ -78,8 +108,14 @@ async function sair() {
 
     <div class="main">
       <header class="topbar">
-        <span class="local"><strong>Farmácia Central</strong> · estoque único SAMU / PSM</span>
+        <span v-if="contexto === 'almoxarifado' && almoxVer" class="local">
+          <strong>Almoxarifado da Saúde</strong> · estoque de retaguarda
+        </span>
+        <span v-else class="local">
+          <strong>Farmácia Central</strong> · estoque único SAMU / PSM
+        </span>
         <div class="right">
+          <ContextoSwitch v-if="almoxVer" />
           <Button
             :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
             text

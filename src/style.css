@@ -230,8 +230,40 @@ h3 {
 }
 
 .sidebar.collapsed .logo span,
-.sidebar.collapsed .nav a span {
+.sidebar.collapsed .nav a span,
+.sidebar.collapsed .sidebar-ctx-chip span {
   display: none;
+}
+
+.sidebar-ctx-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0.25rem 0.65rem;
+  padding: 0.32rem 0.6rem;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sidebar-ctx-chip i {
+  font-size: 0.85rem;
+  width: 1.15rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.sidebar.collapsed .sidebar-ctx-chip {
+  justify-content: center;
+  margin-left: 0;
+  margin-right: 0;
+  padding: 0.35rem;
 }
 
 .sidebar .spacer {
@@ -298,6 +330,110 @@ h3 {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+/* Alternador de contexto (Farmácia | Almoxarifado) na topbar */
+.contexto-switch.p-selectbutton {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius);
+  margin-right: 0.35rem;
+  background: transparent;
+}
+
+.contexto-switch.p-selectbutton .p-togglebutton {
+  background: transparent !important;
+  border: 1px solid var(--border-strong) !important;
+  color: var(--text-muted) !important;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.contexto-switch.p-selectbutton .p-togglebutton:first-child {
+  border-top-left-radius: var(--radius);
+  border-bottom-left-radius: var(--radius);
+  border-right-width: 0 !important;
+}
+
+.contexto-switch.p-selectbutton .p-togglebutton:last-child {
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+}
+
+.contexto-switch.p-selectbutton .p-togglebutton .p-togglebutton-content {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  padding: 0;
+}
+
+.contexto-switch.p-selectbutton .p-togglebutton:not(.p-togglebutton-checked):hover {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+}
+
+.contexto-switch.p-selectbutton .p-togglebutton.p-togglebutton-checked {
+  background: var(--samu-blue) !important;
+  border-color: var(--samu-blue) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.contexto-switch.p-selectbutton .p-togglebutton.p-togglebutton-checked .p-togglebutton-content {
+  color: inherit !important;
+}
+
+html.app-dark .contexto-switch.p-selectbutton .p-togglebutton:not(.p-togglebutton-checked) {
+  color: #b4b4be !important;
+}
+
+html.app-dark .contexto-switch.p-selectbutton .p-togglebutton.p-togglebutton-checked {
+  background: #f4f4f5 !important;
+  border-color: #f4f4f5 !important;
+  color: #18181b !important;
+}
+
+.contexto-switch.p-selectbutton .p-togglebutton:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+.ctx-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.ctx-opt i {
+  font-size: 0.85rem;
+}
+
+/* Chip de identificação nas páginas do Almoxarifado */
+.almox-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  margin-bottom: 0.35rem;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.almox-chip i {
+  font-size: 0.75rem;
 }
 
 .topbar .who {
@@ -758,7 +894,7 @@ a.resumo-item:focus-visible {
   color: var(--text-muted);
   font-weight: 600;
   font-size: 0.8rem;
-  padding: 0.55rem 0.75rem;
+  padding: 0.55rem 0.55rem;
   border-color: var(--border);
   white-space: nowrap;
 }
@@ -771,9 +907,13 @@ a.resumo-item:focus-visible {
   transition: background 0.12s ease;
 }
 .tabela-moderna .p-datatable-tbody > tr > td {
-  padding: 0.3rem 0.75rem;
+  padding: 0.35rem 0.55rem;
   border-color: var(--border);
   font-size: 0.9rem;
+}
+.tabela-moderna .col-produto {
+  width: 99%;
+  min-width: 16rem;
 }
 .tabela-moderna .p-datatable-tbody > tr:hover {
   background: var(--surface-2);
@@ -803,6 +943,24 @@ a.resumo-item:focus-visible {
   color: var(--text-muted);
 }
 
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.mobile-only-inline {
+  display: none;
+}
+
 /* Saldo */
 .saldo {
   display: inline-flex;
@@ -813,6 +971,9 @@ a.resumo-item:focus-visible {
 }
 .saldo.baixo {
   color: var(--danger-fg);
+}
+.saldo.baixo.sobra {
+  color: var(--ok-fg);
 }
 .saldo .pi {
   font-size: 0.75rem;
@@ -847,11 +1008,11 @@ a.resumo-item:focus-visible {
 .acoes {
   display: flex;
   justify-content: flex-end;
-  gap: 2px;
+  gap: 1px;
 }
 .acoes .p-button.p-button-icon-only {
-  width: 2rem;
-  height: 2rem;
+  width: 1.7rem;
+  height: 1.7rem;
   padding: 0;
 }
 .acoes .p-button.p-button-text.acao-entrada:not(:disabled):hover,
@@ -1144,6 +1305,12 @@ a.resumo-item:focus-visible {
 }
 
 /* ============ Responsivo ============ */
+@media (max-width: 1320px) {
+  .tabela-moderna .col-opc-md {
+    display: none;
+  }
+}
+
 @media (max-width: 900px) {
   .topbar .local {
     display: none;
@@ -1156,8 +1323,15 @@ a.resumo-item:focus-visible {
   }
   .sidebar .logo span,
   .sidebar .nav a span,
+  .sidebar .sidebar-ctx-chip span,
   .sidebar .collapse-btn {
     display: none;
+  }
+  .sidebar .sidebar-ctx-chip {
+    justify-content: center;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0.35rem;
   }
   .topbar {
     padding: 0 0.75rem;
@@ -1206,9 +1380,54 @@ a.resumo-item:focus-visible {
   }
   .toolbar > * {
     flex: 1 1 100%;
+    min-width: 0 !important;
   }
   .tabela-moderna .col-opc {
     display: none;
+  }
+  .tabela-moderna .col-produto {
+    width: auto;
+    min-width: 10rem;
+  }
+  .mobile-only-inline {
+    display: inline;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    width: 52px;
+    padding: 0.75rem 0.35rem;
+  }
+  .content {
+    padding: 0.85rem 0.65rem 2rem;
+  }
+  .tabela-moderna .p-datatable-thead > tr > th,
+  .tabela-moderna .p-datatable-tbody > tr > td {
+    padding: 0.35rem 0.45rem;
+  }
+  .tabela-moderna .p-datatable-thead > tr > th:first-child,
+  .tabela-moderna .p-datatable-tbody > tr > td:first-child {
+    padding-left: 0.6rem;
+  }
+  .acoes {
+    flex-wrap: wrap;
+    gap: 1px;
+  }
+  .acoes .p-button.p-button-icon-only {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  .contexto-switch .ctx-opt-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 }
 

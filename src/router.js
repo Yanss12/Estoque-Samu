@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { session, podeAuditar } from './lib/auth'
+import { session, podeAuditar, almoxVer, almoxGerir } from './lib/auth'
 
 const routes = [
   {
@@ -27,10 +27,40 @@ const routes = [
     meta: { requer: 'podeAuditar' },
   },
   { path: '/relatorios', name: 'relatorios', component: () => import('./pages/Relatorios.vue') },
+  {
+    path: '/almoxarifado',
+    name: 'almox-estoque',
+    component: () => import('./pages/almox/AlmoxEstoque.vue'),
+    meta: { requer: 'almoxVer' },
+  },
+  {
+    path: '/almoxarifado/movimentacoes',
+    name: 'almox-movimentacoes',
+    component: () => import('./pages/almox/AlmoxMovimentacoes.vue'),
+    meta: { requer: 'almoxVer' },
+  },
+  {
+    path: '/almoxarifado/transferencias',
+    name: 'almox-transferencias',
+    component: () => import('./pages/almox/AlmoxTransferencias.vue'),
+    meta: { requer: 'almoxVer' },
+  },
+  {
+    path: '/almoxarifado/inventario',
+    name: 'almox-inventario',
+    component: () => import('./pages/almox/AlmoxInventario.vue'),
+    meta: { requer: 'almoxVer' },
+  },
+  {
+    path: '/almoxarifado/relatorios',
+    name: 'almox-relatorios',
+    component: () => import('./pages/almox/AlmoxRelatorios.vue'),
+    meta: { requer: 'almoxVer' },
+  },
 ]
 
 // Guarda por papel: meta.requer aponta para um computed exportado por lib/auth.
-const guardas = { podeAuditar }
+const guardas = { podeAuditar, almoxVer, almoxGerir }
 
 const router = createRouter({
   history: createWebHashHistory(),

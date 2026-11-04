@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { supabase } from './supabase'
+import { obterAlmoxNivel } from './almox'
 
 // Estado de autenticação compartilhado pela aplicação inteira.
 export const session = ref(null)
@@ -9,14 +10,29 @@ export const PAPEIS = ['operador', 'auditor', 'farmaceutico', 'admin']
 export const ehAdmin = computed(() => perfil.value?.papel === 'admin')
 export const podeAuditar = computed(() => ['auditor', 'farmaceutico', 'admin'].includes(perfil.value?.papel))
 
+// Estado de acesso ao Módulo Almoxarifado (Seção 8.1)
+export const almoxNivel = ref('nenhum')
+export const almoxVer = computed(() => ['consulta', 'total'].includes(almoxNivel.value))
+export const almoxGerir = computed(() => almoxNivel.value === 'total')
+
 // True quando o usuário ainda está com a senha padrão (1º acesso) e precisa trocá-la.
 export const precisaTrocarSenha = computed(
   () => !!user.value && !!perfil.value && perfil.value.senha_alterada === false
 )
 
+function limparChavesContexto() {
+  try {
+    sessionStorage.removeItem('samu.ctx.ultima.farmacia')
+    sessionStorage.removeItem('samu.ctx.ultima.almoxarifado')
+  } catch {
+    // Ignora caso sessionStorage esteja indisponível
+  }
+}
+
 async function loadPerfil() {
   if (!user.value) {
     perfil.value = null
+    almoxNivel.value = 'nenhum'
     return
   }
   const { data } = await supabase
@@ -25,6 +41,7 @@ async function loadPerfil() {
     .eq('id', user.value.id)
     .single()
   perfil.value = data ?? null
+  almoxNivel.value = await obterAlmoxNivel(user.value, perfil.value)
 }
 
 async function setSession(s) {
@@ -43,6 +60,10 @@ export async function initAuth() {
   supabase.auth.onAuthStateChange((_event, s) => {
     session.value = s
     user.value = s?.user ?? null
+    if (!s) {
+      almoxNivel.value = 'nenhum'
+      limparChavesContexto()
+    }
     setTimeout(loadPerfil, 0)
   })
 }
@@ -52,6 +73,8 @@ export function signIn(email, password) {
 }
 
 export function signOut() {
+  almoxNivel.value = 'nenhum'
+  limparChavesContexto()
   return supabase.auth.signOut()
 }
 
