@@ -258,12 +258,8 @@ onMounted(recarregarTudo)
 <template>
   <div class="page-head">
     <div>
-      <span class="almox-chip">
-        <i class="pi pi-building" aria-hidden="true" />
-        Almoxarifado da Saúde · retaguarda
-      </span>
       <h1>Movimentações</h1>
-      <p class="page-sub">Trilha imutável de entradas, saídas, reajustes e estornos do Almoxarifado</p>
+      <p class="page-sub">Trilha imutável de entradas, saídas, reajustes e estornos</p>
     </div>
     <div class="page-acoes">
       <Button

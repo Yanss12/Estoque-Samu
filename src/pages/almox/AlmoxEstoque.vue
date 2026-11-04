@@ -183,12 +183,8 @@ onMounted(carregar)
 <template>
   <div class="page-head">
     <div>
-      <span class="almox-chip">
-        <i class="pi pi-building" aria-hidden="true" />
-        Almoxarifado da Saúde · retaguarda
-      </span>
       <h1>Estoque</h1>
-      <p class="page-sub">Saldo de retaguarda, localização, lotes e validades do Almoxarifado</p>
+      <p class="page-sub">Saldo, localização, lotes e validades</p>
     </div>
     <div v-if="almoxGerir" class="page-acoes">
       <Button

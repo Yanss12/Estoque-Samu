@@ -19,11 +19,7 @@ const aba = ref('estoque')
 <template>
   <div class="page-head">
     <div>
-      <span class="almox-chip">
-        <i class="pi pi-building" aria-hidden="true" />
-        Almoxarifado da Saúde · retaguarda
-      </span>
-      <h1>Relatórios do Almoxarifado</h1>
+      <h1>Relatórios</h1>
       <p class="page-sub">
         Posição de estoque, entradas, saídas, transferências, ficha por produto, crítico, validade, inventários, histórico e distribuição
       </p>

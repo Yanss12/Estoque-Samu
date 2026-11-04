@@ -98,10 +98,6 @@ onMounted(carregar)
   <template v-else>
     <div class="page-head">
       <div>
-        <span class="almox-chip">
-          <i class="pi pi-building" aria-hidden="true" />
-          Almoxarifado da Saúde · retaguarda
-        </span>
         <h1>Inventário</h1>
         <p class="page-sub">Conferência física de estoque por produto e lote no Almoxarifado</p>
       </div>

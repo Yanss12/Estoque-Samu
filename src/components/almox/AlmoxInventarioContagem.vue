@@ -349,10 +349,6 @@ watch(() => props.inventario.inventario_id, carregar, { immediate: true })
 <template>
   <div class="page-head">
     <div>
-      <span class="almox-chip">
-        <i class="pi pi-building" aria-hidden="true" />
-        Almoxarifado da Saúde · retaguarda
-      </span>
       <h1>{{ inventario.descricao || `Inventário #${inventario.inventario_id}` }}</h1>
       <p class="page-sub">
         <span class="cat-badge" style="margin-right: 0.35rem">

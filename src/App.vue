@@ -75,14 +75,6 @@ async function sair() {
         <LogoSamu :size="28" />
         <span>Estoque SAMU</span>
       </div>
-      <div
-        v-if="contexto === 'almoxarifado' && almoxVer"
-        class="sidebar-ctx-chip"
-        title="Almoxarifado da Saúde"
-      >
-        <i class="pi pi-building" aria-hidden="true" />
-        <span>Almoxarifado</span>
-      </div>
       <nav class="nav" aria-label="Principal">
         <router-link
           v-for="item in navVisivel"
