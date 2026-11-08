@@ -20,6 +20,7 @@ const salvando = ref(false)
 const podeSalvar = computed(() => nova.value.length >= 6 && nova.value === conf.value)
 
 async function salvar() {
+  if (salvando.value) return
   if (nova.value.length < 6) {
     toast.add({ severity: 'warn', summary: 'Senha curta', detail: 'Use no mínimo 6 caracteres.', life: 4000 })
     return
@@ -84,7 +85,6 @@ async function sair() {
           placeholder="Repita a senha"
           input-class="full"
           fluid
-          @keyup.enter="salvar"
         />
       </div>
 
