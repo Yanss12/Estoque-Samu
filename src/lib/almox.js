@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { diasAte, dataISOLocal, mensagemErro } from './format'
+import { diasAte, dataISOLocal, mensagemErro, ehValidadeProvisoria } from './format'
 
 // Flag de mock: ligado SOMENTE em desenvolvimento e desligado por padrão em produção.
 export const ALMOX_MOCK =
@@ -78,6 +78,9 @@ export function mensagemErroAlmox(err) {
   }
   if (cod === 'ALMOX_LOTE_INEXISTENTE') {
     return 'Lote não encontrado no Almoxarifado.'
+  }
+  if (cod === 'ALMOX_VALIDADE_PROVISORIA') {
+    return 'Validade provisória: informe a validade real do lote.'
   }
   return mensagemErro(err)
 }
@@ -215,6 +218,7 @@ const mockState = {
     { id: 5, produto_id: 103, numero_lote: 'LUV-0900', validade: dMais(-12) },
     { id: 6, produto_id: 104, numero_lote: 'FEN-3301', validade: dMais(150) },
     { id: 7, produto_id: 105, numero_lote: 'SON-7710', validade: dMais(180) },
+    { id: 8, produto_id: 107, numero_lote: 'GAZ-PROV', validade: '2099-12-31' },
   ],
   almoxMovimentacoes: [
     {
@@ -541,6 +545,31 @@ const mockState = {
       usuario_id: '00000000-0000-0000-0000-000000000001',
       usuario_nome: 'Elaine (RT Principal)',
       data: tsMenosHoras(12),
+    },
+    {
+      id: 14,
+      operacao_id: '11111111-1111-4111-8111-111111111113',
+      produto_id: 107,
+      lote_id: 8,
+      tipo: 'entrada',
+      motivo: 'saldo_inicial',
+      quantidade: 100,
+      origem: 'Implantação do Módulo Almoxarifado',
+      destino: null,
+      documento: 'INV-001',
+      data_documento: dMais(-25),
+      justificativa: null,
+      observacao: 'Lote com validade provisória pendente de conferência',
+      estorno_de: null,
+      transferencia_item_id: null,
+      inventario_item_id: null,
+      quantidade_anterior: null,
+      quantidade_encontrada: null,
+      quantidade_ajustada: null,
+      diferenca: null,
+      usuario_id: '00000000-0000-0000-0000-000000000001',
+      usuario_nome: 'Elaine (RT Principal)',
+      data: tsMenosHoras(500),
     },
   ],
   almoxTransferencias: [
@@ -1171,6 +1200,12 @@ function executarRpcMock(fnName, params) {
         if (!numLote || !it.validade) {
           throw criarErroContrato(`Lote e validade são obrigatórios para ${p.nome}.`, 'ALMOX_LOTE_OBRIGATORIO')
         }
+        if (ehValidadeProvisoria(it.validade)) {
+          throw criarErroContrato(
+            'Validade provisória: informe a validade real do lote.',
+            'ALMOX_VALIDADE_PROVISORIA'
+          )
+        }
         const chave = `${prodId}:${numLote}`
         if (chavesVistas.has(chave)) {
           throw criarErroContrato(`Produto e lote (${numLote}) repetidos na mesma entrada.`, 'ALMOX_ITEM_DUPLICADO')
@@ -1181,7 +1216,9 @@ function executarRpcMock(fnName, params) {
           (l) => l.produto_id === prodId && l.numero_lote.trim().toUpperCase() === numLote
         )
         if (loteExistente) {
-          if (loteExistente.validade !== it.validade) {
+          if (ehValidadeProvisoria(loteExistente.validade)) {
+            loteExistente.validade = it.validade
+          } else if (loteExistente.validade !== it.validade) {
             throw criarErroContrato(
               `O lote ${numLote} já existe com a validade ${loteExistente.validade} (informada: ${it.validade}). Para corrigir erro de validade, use "Corrigir validade" na ficha do produto.`,
               'ALMOX_LOTE_VALIDADE_DIVERGENTE'
@@ -1705,6 +1742,12 @@ function executarRpcMock(fnName, params) {
     }
     if (!novaValidade) {
       throw criarErroContrato('Informe a nova data de validade.', 'ALMOX_DADO_INVALIDO')
+    }
+    if (ehValidadeProvisoria(novaValidade)) {
+      throw criarErroContrato(
+        'Validade provisória: informe a validade real do lote.',
+        'ALMOX_VALIDADE_PROVISORIA'
+      )
     }
     if (novaValidade === lote.validade) {
       throw criarErroContrato(

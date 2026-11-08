@@ -6,6 +6,7 @@ import Column from 'primevue/column'
 import { supabase } from '../lib/supabase'
 import { fetchPerfisMap } from '../lib/perfis'
 import { motivoLabel, nomeDestinatario } from '../lib/movimentacoes'
+import { ehValidadeProvisoria } from '../lib/format'
 import { transferenciaAlmoxTag } from '../lib/almox'
 
 const props = defineProps({
@@ -80,7 +81,8 @@ function autor(m) {
       </Column>
       <Column header="Validade">
         <template #body="{ data }">
-          <span class="num">{{ fmtData(data.validade) }}</span>
+          <span v-if="ehValidadeProvisoria(data.validade)" class="tag-provisoria" title="Validade provisória (31/12/2099)">provisória</span>
+          <span v-else class="num">{{ fmtData(data.validade) }}</span>
         </template>
       </Column>
       <Column header="Saldo" header-class="col-num" body-class="col-num">

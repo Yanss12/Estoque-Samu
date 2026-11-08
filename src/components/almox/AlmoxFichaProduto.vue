@@ -5,7 +5,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import { catLabel } from '../../lib/categorias'
-import { fmtDataLocal } from '../../lib/format'
+import { fmtDataLocal, ehValidadeProvisoria } from '../../lib/format'
 import { almoxGerir } from '../../lib/auth'
 import { almoxSelectView, almoxMotivoLabel } from '../../lib/almox'
 import AlmoxCorrigirValidadeDialog from './AlmoxCorrigirValidadeDialog.vue'
@@ -121,7 +121,14 @@ function classeValidadeLote(l) {
       </Column>
       <Column header="Validade">
         <template #body="{ data }">
-          <span class="validade" :class="classeValidadeLote(data)">
+          <span
+            v-if="ehValidadeProvisoria(data.validade)"
+            class="tag-provisoria"
+            title="Validade provisória (31/12/2099) — use Corrigir validade ou registre entrada com a validade real"
+          >
+            provisória
+          </span>
+          <span v-else class="validade" :class="classeValidadeLote(data)">
             {{ fmtDataLocal(data.validade) }}
             <small v-if="data.vencido">vencido</small>
             <small v-else-if="data.dias_restantes !== null && data.dias_restantes <= 60">{{ data.dias_restantes }}d</small>

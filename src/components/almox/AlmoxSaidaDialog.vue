@@ -8,7 +8,7 @@ import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
 import { user, perfil } from '../../lib/auth'
-import { fmtDataLocal } from '../../lib/format'
+import { fmtDataLocal, ehValidadeProvisoria } from '../../lib/format'
 import {
   ALMOX_MOTIVOS_SAIDA,
   ALMOX_MOTIVOS_LOTE_VENCIDO,
@@ -170,6 +170,7 @@ async function carregarLotes() {
     .filter((l) => Number(l.saldo) > 0)
     .map((l) => ({
       ...l,
+      provisoria: ehValidadeProvisoria(l.validade),
       validadeFmt: fmtDataLocal(l.validade),
     }))
 }
@@ -418,9 +419,11 @@ async function salvar() {
               <div class="lote-num">
                 <span class="mono">{{ l.numero_lote || 'sem nº' }}</span>
                 <span v-if="l.vencido" class="tag-vencido">Vencido</span>
+                <span v-else-if="l.provisoria" class="tag-provisoria" title="Validade provisória (31/12/2099)">provisória</span>
               </div>
               <div class="lote-meta">
                 <template v-if="l.vencido">venceu em {{ l.validadeFmt }}</template>
+                <template v-else-if="l.provisoria">validade provisória</template>
                 <template v-else>
                   vence {{ l.validadeFmt }}
                   <template v-if="l.dias_restantes !== null && l.dias_restantes <= 60">

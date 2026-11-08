@@ -9,9 +9,10 @@ import DatePicker from 'primevue/datepicker'
 import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
 import { user, perfil } from '../../lib/auth'
-import { dataISOLocal } from '../../lib/format'
+import { dataISOLocal, ehValidadeProvisoria } from '../../lib/format'
 import {
   ALMOX_MOTIVOS_ENTRADA,
+  almoxSelectView,
   almoxRpc,
   mensagemErroAlmox,
 } from '../../lib/almox'
@@ -28,6 +29,30 @@ const salvando = ref(false)
 
 const cabecalho = ref(novoCabecalho())
 const itens = ref([novaLinha()])
+const lotesPorProduto = ref({})
+
+async function carregarLotesProduto(produtoId) {
+  if (!produtoId || lotesPorProduto.value[produtoId]) return
+  const { data } = await almoxSelectView('almox_saldo_lote', {
+    eq: { produto_id: produtoId },
+  })
+  lotesPorProduto.value = {
+    ...lotesPorProduto.value,
+    [produtoId]: data ?? [],
+  }
+}
+
+function loteExistenteLinha(it) {
+  if (!it?.produto_id || !it?.numero_lote) return null
+  const ch = it.numero_lote.trim().toUpperCase()
+  if (!ch) return null
+  const lista = lotesPorProduto.value[it.produto_id] || []
+  return lista.find((l) => (l.numero_lote || '').trim().toUpperCase() === ch) ?? null
+}
+
+function loteLinhaEhProvisorio(it) {
+  return ehValidadeProvisoria(loteExistenteLinha(it)?.validade)
+}
 
 function novoCabecalho() {
   return {
@@ -83,11 +108,15 @@ const exigeJustificativa = computed(() => cabecalho.value.motivo === 'outros')
 
 watch(
   () => props.visible,
-  (aberto) => {
+  async (aberto) => {
     if (!aberto) return
     cabecalho.value = novoCabecalho()
+    lotesPorProduto.value = {}
     const preId = props.produtoPreselecionado?.produto_id ?? props.produtoPreselecionado?.id ?? null
     itens.value = [novaLinha(preId)]
+    if (preId) {
+      await carregarLotesProduto(preId)
+    }
   }
 )
 
@@ -101,10 +130,12 @@ function removerLinha(idx) {
   itens.value.splice(idx, 1)
 }
 
-function aoTrocarProdutoLinha(it) {
+async function aoTrocarProdutoLinha(it) {
   if (ehPermanente(it.produto_id)) {
     it.numero_lote = ''
     it.validade = null
+  } else if (it.produto_id) {
+    await carregarLotesProduto(it.produto_id)
   }
 }
 
@@ -176,6 +207,15 @@ async function salvar() {
         summary: `Item ${i + 1}: lote e validade obrigatórios`,
         detail: `Informe número do lote e data de validade para ${p.nome}.`,
         life: 4500,
+      })
+      return
+    }
+    if (!perm && ehValidadeProvisoria(valISO)) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Validade provisória',
+        detail: 'Validade provisória: informe a validade real do lote.',
+        life: 5000,
       })
       return
     }
@@ -409,6 +449,22 @@ async function salvar() {
               :aria-label="`Remover item ${idx + 1}`"
               @click="removerLinha(idx)"
             />
+          </div>
+          <div
+            v-if="loteLinhaEhProvisorio(it) || (it.validade && ehValidadeProvisoria(fmtDataParam(it.validade)))"
+            class="aviso-controlado"
+            style="margin-bottom: 0; padding: 0.45rem 0.7rem; font-size: 0.8rem"
+          >
+            <i class="pi pi-exclamation-triangle" aria-hidden="true" />
+            <span>
+              <strong>Validade provisória:</strong>
+              <template v-if="loteLinhaEhProvisorio(it)">
+                o lote <strong class="mono">{{ loteExistenteLinha(it)?.numero_lote }}</strong> está cadastrado com validade provisória. Informe a validade real do lote para atualizá-la.
+              </template>
+              <template v-else>
+                informe a validade real do lote (não use 31/12/2099).
+              </template>
+            </span>
           </div>
         </div>
       </div>

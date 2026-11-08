@@ -13,7 +13,7 @@ import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
 import { user, perfil, ehAdmin } from '../lib/auth'
 import { MOTIVOS_ENTRADA, MOTIVOS_SAIDA, MOTIVOS_LOTE_VENCIDO } from '../lib/movimentacoes'
-import { fmtDataLocal, diasAte, mensagemErro } from '../lib/format'
+import { fmtDataLocal, diasAte, mensagemErro, ehValidadeProvisoria } from '../lib/format'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -27,6 +27,7 @@ const toast = useToast()
 const confirm = useConfirm()
 const salvando = ref(false)
 const lotesDisponiveis = ref([])
+const lotesProdutoEntrada = ref([])
 
 const tipoOpcoes = [
   { label: 'Entrada', value: 'entrada' },
@@ -158,10 +159,21 @@ async function carregarLotes() {
   form.value.lote_id = null
   form.value.distribuicao = {}
   qtdTotal.value = null
-  if (form.value.tipo !== 'saida' || !form.value.produto_id) {
+  if (!form.value.produto_id) {
     lotesDisponiveis.value = []
+    lotesProdutoEntrada.value = []
     return
   }
+  if (form.value.tipo === 'entrada') {
+    lotesDisponiveis.value = []
+    const { data } = await supabase
+      .from('lotes')
+      .select('id, numero_lote, validade')
+      .eq('produto_id', form.value.produto_id)
+    lotesProdutoEntrada.value = data ?? []
+    return
+  }
+  lotesProdutoEntrada.value = []
   const { data } = await supabase
     .from('saldo_por_lote')
     .select('lote_id, numero_lote, validade, saldo')
@@ -170,15 +182,25 @@ async function carregarLotes() {
     .order('validade', { ascending: true, nullsFirst: false })
   lotesDisponiveis.value = (data ?? []).map((l) => {
     const dias = diasAte(l.validade)
+    const provisoria = ehValidadeProvisoria(l.validade)
     return {
       ...l,
       vencido: dias !== null && dias < 0,
+      provisoria,
       dias,
       validadeFmt: fmtDataLocal(l.validade),
       rotulo: `${l.numero_lote || 'sem nº'} · venc. ${fmtDataLocal(l.validade)} · saldo ${l.saldo}`,
     }
   })
 }
+
+const loteExistenteEntrada = computed(() => {
+  const ch = (form.value.numero_lote || '').trim().toUpperCase()
+  if (!ch || form.value.tipo !== 'entrada') return null
+  return lotesProdutoEntrada.value.find((l) => (l.numero_lote || '').trim().toUpperCase() === ch) ?? null
+})
+
+const loteEntradaEhProvisorio = computed(() => ehValidadeProvisoria(loteExistenteEntrada.value?.validade))
 
 function fechar() {
   emit('update:visible', false)
@@ -232,6 +254,15 @@ async function salvar() {
   // Entrada: lote+validade obrigatórios p/ consumíveis
   if (loteObrigatorio.value && f.tipo === 'entrada' && (!f.numero_lote?.trim() || !f.validade)) {
     toast.add({ severity: 'warn', summary: 'Lote obrigatório', detail: 'Informe o número do lote e a validade.', life: 4000 })
+    return
+  }
+  if (f.tipo === 'entrada' && f.validade && ehValidadeProvisoria(dataISO(f.validade))) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Validade provisória',
+      detail: 'Validade provisória: informe a validade real do lote.',
+      life: 5000,
+    })
     return
   }
   if (f.tipo === 'entrada' && (!f.quantidade || f.quantidade <= 0)) {
@@ -327,7 +358,19 @@ async function salvar() {
       if (existente) {
         lote_id = existente.id
         const novaValidade = dataISO(f.validade)
-        if (novaValidade && novaValidade !== existente.validade) {
+        if (ehValidadeProvisoria(existente.validade)) {
+          if (!novaValidade || ehValidadeProvisoria(novaValidade)) {
+            toast.add({
+              severity: 'warn',
+              summary: 'Validade provisória',
+              detail: 'Validade provisória: informe a validade real do lote.',
+              life: 5000,
+            })
+            return
+          }
+          const { error: eValProv } = await supabase.from('lotes').update({ validade: novaValidade }).eq('id', existente.id)
+          if (eValProv) throw eValProv
+        } else if (novaValidade && novaValidade !== existente.validade) {
           if (!ehAdmin.value) {
             const registrar = await perguntar(
               `Lote ${existente.numero_lote} já cadastrado com validade ${fmtDataLocal(existente.validade)}. ` +
@@ -513,9 +556,11 @@ async function salvar() {
               <div class="lote-num">
                 <span class="mono">{{ l.numero_lote || 'sem nº' }}</span>
                 <span v-if="l.vencido" class="tag-vencido">Vencido</span>
+                <span v-else-if="l.provisoria" class="tag-provisoria" title="Validade provisória (31/12/2099)">provisória</span>
               </div>
               <div class="lote-meta">
                 <template v-if="l.vencido">venceu em {{ l.validadeFmt }}</template>
+                <template v-else-if="l.provisoria">validade provisória</template>
                 <template v-else>vence {{ l.validadeFmt }}<template v-if="l.dias !== null && l.dias <= 60"> · em {{ l.dias }} {{ l.dias === 1 ? 'dia' : 'dias' }}</template></template>
                 · saldo <strong>{{ l.saldo }}</strong>
               </div>
@@ -559,14 +604,32 @@ async function salvar() {
       </div>
 
       <!-- Entrada: reaproveita/cria lote -->
-      <div v-else class="linha-campos">
-        <div class="field">
-          <label>Lote <span v-if="!loteObrigatorio" class="opc">(opcional)</span></label>
-          <InputText v-model="form.numero_lote" placeholder="Como está na embalagem" class="full" />
+      <div v-else>
+        <div class="linha-campos">
+          <div class="field">
+            <label>Lote <span v-if="!loteObrigatorio" class="opc">(opcional)</span></label>
+            <InputText v-model="form.numero_lote" placeholder="Como está na embalagem" class="full" />
+          </div>
+          <div class="field">
+            <label>Validade <span v-if="!loteObrigatorio" class="opc">(opcional)</span></label>
+            <DatePicker v-model="form.validade" date-format="dd/mm/yy" show-icon class="full" />
+          </div>
         </div>
-        <div class="field">
-          <label>Validade <span v-if="!loteObrigatorio" class="opc">(opcional)</span></label>
-          <DatePicker v-model="form.validade" date-format="dd/mm/yy" show-icon class="full" />
+        <div
+          v-if="loteEntradaEhProvisorio || (form.validade && ehValidadeProvisoria(dataISO(form.validade)))"
+          class="aviso-controlado"
+          style="margin-top: -0.25rem; margin-bottom: 1rem"
+        >
+          <i class="pi pi-exclamation-triangle" aria-hidden="true" />
+          <span>
+            <strong>Validade provisória:</strong>
+            <template v-if="loteEntradaEhProvisorio">
+              o lote <strong class="mono">{{ loteExistenteEntrada?.numero_lote }}</strong> está cadastrado com validade provisória. Informe a validade real do lote para atualizá-la.
+            </template>
+            <template v-else>
+              informe a validade real do lote (não use 31/12/2099).
+            </template>
+          </span>
         </div>
       </div>
 

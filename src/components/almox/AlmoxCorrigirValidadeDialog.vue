@@ -5,7 +5,7 @@ import Dialog from 'primevue/dialog'
 import DatePicker from 'primevue/datepicker'
 import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
-import { fmtDataLocal, dataISOLocal } from '../../lib/format'
+import { fmtDataLocal, dataISOLocal, ehValidadeProvisoria } from '../../lib/format'
 import { almoxRpc, mensagemErroAlmox } from '../../lib/almox'
 
 const props = defineProps({
@@ -48,7 +48,9 @@ watch(
   () => props.visible,
   (aberto) => {
     if (!aberto) return
-    novaValidadeData.value = parseISOParaDate(props.lote?.validade)
+    novaValidadeData.value = ehValidadeProvisoria(props.lote?.validade)
+      ? null
+      : parseISOParaDate(props.lote?.validade)
     justificativa.value = ''
     erroMsg.value = ''
   }
@@ -130,7 +132,9 @@ async function salvar() {
         </div>
         <div class="feed-sub" style="margin-top: 0.3rem">
           Lote: <strong class="mono">{{ lote.numero_lote }}</strong>
-          <span class="sep">·</span>Validade atual: <strong>{{ fmtDataLocal(lote.validade) }}</strong>
+          <span class="sep">·</span>Validade atual:
+          <span v-if="ehValidadeProvisoria(lote.validade)" class="tag-provisoria">provisória</span>
+          <strong v-else>{{ fmtDataLocal(lote.validade) }}</strong>
           <span class="sep">·</span>Saldo: <strong>{{ lote.saldo }}</strong>
         </div>
         <div class="feed-obs" style="margin-top: 0.35rem">

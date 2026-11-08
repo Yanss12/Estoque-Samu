@@ -9,7 +9,7 @@ import Checkbox from 'primevue/checkbox'
 import Button from 'primevue/button'
 import BotoesExportar from '../BotoesExportar.vue'
 import { CATEGORIAS, catLabel } from '../../lib/categorias'
-import { fmtDataLocal } from '../../lib/format'
+import { fmtDataLocal, ehValidadeProvisoria } from '../../lib/format'
 import { almoxSelectView, mensagemErroAlmox } from '../../lib/almox'
 
 const toast = useToast()
@@ -231,7 +231,8 @@ onMounted(carregar)
       </Column>
       <Column field="validade" header="Validade" sortable style="width: 8rem" header-class="col-opc" body-class="col-opc">
         <template #body="{ data }">
-          <span>{{ data.validade ? fmtDataLocal(data.validade) : '—' }}</span>
+          <span v-if="ehValidadeProvisoria(data.validade)" class="tag-provisoria">provisória</span>
+          <span v-else>{{ data.validade ? fmtDataLocal(data.validade) : '—' }}</span>
         </template>
       </Column>
       <Column

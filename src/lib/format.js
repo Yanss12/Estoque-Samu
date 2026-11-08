@@ -11,21 +11,30 @@ export function tempoRelativo(d) {
   return new Date(d).toLocaleDateString('pt-BR')
 }
 
+export const VALIDADE_PROVISORIA_ISO = '2099-12-31'
+
+export function ehValidadeProvisoria(v) {
+  if (!v) return false
+  return String(v).slice(0, 10) === VALIDADE_PROVISORIA_ISO
+}
+
 // Datas 'YYYY-MM-DD' (validade) viram Date no fuso LOCAL.
 // new Date('2026-10-30') é meia-noite UTC = 29/10 21h em Brasília (1 dia a menos).
 export function parseDataLocal(v) {
   if (!v) return null
-  const [y, m, d] = v.split('-').map(Number)
+  const [y, m, d] = String(v).slice(0, 10).split('-').map(Number)
   return new Date(y, m - 1, d)
 }
 
 export function fmtDataLocal(v) {
-  return v ? parseDataLocal(v).toLocaleDateString('pt-BR') : '—'
+  if (!v) return '—'
+  if (ehValidadeProvisoria(v)) return 'provisória'
+  return parseDataLocal(v).toLocaleDateString('pt-BR')
 }
 
-// Dias até a data (negativo = já passou). null se não houver data.
+// Dias até a data (negativo = já passou). null se não houver data ou se for validade provisória.
 export function diasAte(v) {
-  if (!v) return null
+  if (!v || ehValidadeProvisoria(v)) return null
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
   return Math.round((parseDataLocal(v) - hoje) / 86400000)
@@ -35,8 +44,12 @@ export function diasAte(v) {
 // "TypeError: Failed to fetch" (Chrome) / "Load failed" (Safari) / "NetworkError" (Firefox).
 export function mensagemErro(err) {
   const msg = err?.message ?? String(err ?? '')
+  const det = err?.details ?? err?.detail ?? ''
   if (/failed to fetch|load failed|networkerror|network request failed/i.test(msg)) {
     return 'Falha de conexão com o servidor. Verifique a internet e tente de novo.'
+  }
+  if (/validade provis[oó]ria|ALMOX_VALIDADE_PROVISORIA/i.test(`${msg} ${det}`)) {
+    return 'Validade provisória: informe a validade real do lote.'
   }
   return msg
 }

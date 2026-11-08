@@ -20,7 +20,7 @@ import ProdutoDialog from '../components/ProdutoDialog.vue'
 import Paginador from '../components/Paginador.vue'
 import BaixaVencidosDialog from '../components/BaixaVencidosDialog.vue'
 import { exportarRelatorioMensal } from '../lib/relatorioExcel'
-import { mensagemErro } from '../lib/format'
+import { mensagemErro, ehValidadeProvisoria } from '../lib/format'
 
 const toast = useToast()
 const route = useRoute()
@@ -121,14 +121,18 @@ function parseData(v) {
 }
 function diasParaVencer(produtoId) {
   const v = validadePorProduto.value[produtoId]
-  if (!v) return null
+  if (!v || ehValidadeProvisoria(v)) return null
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
   return Math.ceil((parseData(v) - hoje) / 86400000)
 }
+function proxValidadeProvisoria(produtoId) {
+  return ehValidadeProvisoria(validadePorProduto.value[produtoId])
+}
 function proxValidadeFmt(produtoId) {
   const v = validadePorProduto.value[produtoId]
   if (!v) return null
+  if (ehValidadeProvisoria(v)) return 'provisória'
   return parseData(v).toLocaleDateString('pt-BR')
 }
 // Urgência: vencido = vermelho, ≤60d = âmbar, senão texto normal.
@@ -264,11 +268,18 @@ onMounted(() => {
     <Column header="Próx. validade" style="width: 1%; white-space: nowrap">
       <template #body="{ data }">
         <span
-          v-if="proxValidadeFmt(data.produto_id)"
+          v-if="proxValidadeProvisoria(data.produto_id)"
+          class="tag-provisoria"
+          title="Validade provisória (31/12/2099) — informe a validade real"
+        >
+          provisória
+        </span>
+        <span
+          v-else-if="proxValidadeFmt(data.produto_id)"
           class="validade"
           :class="classeValidade(data.produto_id)"
         >
-          {{ proxValidadeFmt(data.produto_id) }}<small v-if="diasParaVencer(data.produto_id) < 0">vencido</small><small v-else-if="diasParaVencer(data.produto_id) <= 60">{{ diasParaVencer(data.produto_id) }}d</small>
+          {{ proxValidadeFmt(data.produto_id) }}<small v-if="diasParaVencer(data.produto_id) !== null && diasParaVencer(data.produto_id) < 0">vencido</small><small v-else-if="diasParaVencer(data.produto_id) !== null && diasParaVencer(data.produto_id) <= 60">{{ diasParaVencer(data.produto_id) }}d</small>
         </span>
         <span v-else class="muted" title="Sem lote com validade">—</span>
       </template>

@@ -18,7 +18,7 @@ import AlmoxReajusteDialog from '../../components/almox/AlmoxReajusteDialog.vue'
 import AlmoxTransferenciaDialog from '../../components/almox/AlmoxTransferenciaDialog.vue'
 import { almoxGerir } from '../../lib/auth'
 import { CATEGORIAS, catLabel } from '../../lib/categorias'
-import { fmtDataLocal, diasAte } from '../../lib/format'
+import { fmtDataLocal, diasAte, ehValidadeProvisoria } from '../../lib/format'
 import {
   ALMOX_GRUPOS_ITEM,
   ALMOX_SITUACOES,
@@ -344,7 +344,8 @@ onMounted(carregar)
             <span v-if="data.estoque_minimo > 0"> · mín. {{ data.estoque_minimo }}</span>
             <span v-if="data.localizacao"> · {{ data.localizacao }}</span>
             <span v-if="data.proxima_validade" class="mobile-only-inline">
-              · <span class="validade" :class="classeValidade(data.proxima_validade)">
+              · <span v-if="ehValidadeProvisoria(data.proxima_validade)" class="tag-provisoria">provisória</span>
+              <span v-else class="validade" :class="classeValidade(data.proxima_validade)">
                 val. {{ fmtDataLocal(data.proxima_validade) }}
               </span>
             </span>
@@ -392,11 +393,18 @@ onMounted(carregar)
       <Column field="proxima_validade" header="Validade" sortable style="width: 1%; white-space: nowrap" header-class="col-opc" body-class="col-opc">
         <template #body="{ data }">
           <span
-            v-if="data.proxima_validade"
+            v-if="ehValidadeProvisoria(data.proxima_validade)"
+            class="tag-provisoria"
+            title="Validade provisória (31/12/2099) — informe a validade real"
+          >
+            provisória
+          </span>
+          <span
+            v-else-if="data.proxima_validade"
             class="validade"
             :class="classeValidade(data.proxima_validade)"
           >
-            {{ fmtDataLocal(data.proxima_validade) }}<small v-if="diasValidade(data.proxima_validade) < 0">vencido</small><small v-else-if="diasValidade(data.proxima_validade) <= 60">{{ diasValidade(data.proxima_validade) }}d</small>
+            {{ fmtDataLocal(data.proxima_validade) }}<small v-if="diasValidade(data.proxima_validade) !== null && diasValidade(data.proxima_validade) < 0">vencido</small><small v-else-if="diasValidade(data.proxima_validade) !== null && diasValidade(data.proxima_validade) <= 60">{{ diasValidade(data.proxima_validade) }}d</small>
           </span>
           <span v-else class="muted" title="Sem lote com validade">—</span>
         </template>
