@@ -36,7 +36,7 @@ async function carregar() {
   try {
     const [saldo, prods, sets] = await Promise.all([
       supabase.from('saldo_estoque').select('*').eq('categoria', 'psicotropico').order('nome'),
-      supabase.from('produtos').select('id, nome, categoria, controlado').eq('categoria', 'psicotropico').order('nome'),
+      supabase.from('produtos').select('id, nome, categoria, controlado, unidade_medida').eq('categoria', 'psicotropico').order('nome'),
       supabase.from('setores').select('id, nome, grupo').eq('ativo', true).order('nome'),
     ])
     if (saldo.error) throw saldo.error

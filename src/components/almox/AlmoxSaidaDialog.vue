@@ -60,6 +60,7 @@ const produtoSel = computed(() =>
 )
 
 const ehControlado = computed(() => !!produtoSel.value?.controlado)
+const unidadeMedida = computed(() => (produtoSel.value?.unidade_medida || '').trim() || null)
 const loteObrigatorio = computed(() => !!produtoSel.value && produtoSel.value.categoria !== 'permanente')
 const ehOutraUnidade = computed(() => form.value.motivo === 'outra_unidade')
 const exigeJustificativa = computed(() => ['outros', 'perda_avaria'].includes(form.value.motivo))
@@ -378,9 +379,12 @@ async function salvar() {
       <!-- Distribuição por lote em FEFO para itens consumíveis -->
       <div v-if="loteObrigatorio" class="field">
         <label>
-          Quantidade por lote
+          Quantidade por lote<span v-if="unidadeMedida" class="opc"> (em {{ unidadeMedida.toLowerCase() }})</span>
           <span class="opc">· {{ aceitaVencido ? 'vencidos no topo' : 'primeiro a vencer no topo (FEFO)' }}</span>
         </label>
+        <div v-if="unidadeMedida" style="margin-bottom: 0.25rem">
+          <span class="chip-unidade">Medido em: <strong>{{ unidadeMedida }}</strong></span>
+        </div>
         <div v-if="lotesDisponiveis.length" class="qtd-fefo">
           <InputNumber
             :model-value="qtdTotal"
@@ -458,7 +462,10 @@ async function salvar() {
 
       <!-- Item permanente (sem lote) -->
       <div v-else-if="produtoSel" class="field">
-        <label for="almox-sai-qtd-perm">Quantidade (saldo atual: {{ produtoSel.saldo }})</label>
+        <label for="almox-sai-qtd-perm">
+          Quantidade<span v-if="unidadeMedida" class="opc"> (em {{ unidadeMedida.toLowerCase() }})</span>
+          <span class="opc">· saldo atual: {{ produtoSel.saldo }}</span>
+        </label>
         <InputNumber
           v-model="form.quantidade"
           input-id="almox-sai-qtd-perm"
@@ -467,6 +474,9 @@ async function salvar() {
           show-buttons
           class="full"
         />
+        <span v-if="unidadeMedida" class="chip-unidade">
+          Medido em: <strong>{{ unidadeMedida }}</strong>
+        </span>
       </div>
 
       <div class="field">

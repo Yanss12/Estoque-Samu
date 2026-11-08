@@ -1078,6 +1078,26 @@ a.resumo-item:focus-visible {
   font-size: 0.8rem;
 }
 
+.chip-unidade {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 0.22rem 0.55rem;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.chip-unidade strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .linha-campos {
   display: flex;
   gap: 0.75rem;

@@ -66,6 +66,10 @@ function prodPorId(id) {
   return opcoesProdutos.value.find((p) => Number(p.id) === Number(id)) ?? null
 }
 
+function unidadeLinha(produtoId) {
+  return (prodPorId(produtoId)?.unidade_medida || '').trim() || null
+}
+
 function ehPermanente(produtoId) {
   return prodPorId(produtoId)?.categoria === 'permanente'
 }
@@ -402,8 +406,10 @@ async function efetivarTransferencia(p_itens) {
               />
             </div>
 
-            <div class="field" style="flex: 0.75; margin-bottom: 0">
-              <label :for="`trf-qtd-${idx}`">Quantidade</label>
+            <div class="field" style="flex: 0.9; margin-bottom: 0">
+              <label :for="`trf-qtd-${idx}`">
+                Quantidade<span v-if="unidadeLinha(it.produto_id)" class="opc"> (em {{ unidadeLinha(it.produto_id).toLowerCase() }})</span>
+              </label>
               <InputNumber
                 v-model="it.quantidade"
                 :input-id="`trf-qtd-${idx}`"
@@ -412,6 +418,9 @@ async function efetivarTransferencia(p_itens) {
                 show-buttons
                 class="full"
               />
+              <span v-if="unidadeLinha(it.produto_id)" class="chip-unidade">
+                Medido em: <strong>{{ unidadeLinha(it.produto_id) }}</strong>
+              </span>
             </div>
 
             <Button

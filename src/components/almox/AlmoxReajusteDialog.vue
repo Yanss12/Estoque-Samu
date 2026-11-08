@@ -43,6 +43,8 @@ const produtoSel = computed(() =>
   produtosAtivos.value.find((p) => Number(p.id) === Number(form.value.produto_id)) ?? null
 )
 
+const unidadeMedida = computed(() => (produtoSel.value?.unidade_medida || '').trim() || null)
+
 const ehPermanente = computed(() => produtoSel.value?.categoria === 'permanente')
 
 const loteSel = computed(() =>
@@ -235,7 +237,9 @@ async function salvar() {
       </div>
 
       <div v-if="produtoSel && (ehPermanente || form.lote_id)" class="field">
-        <label for="almox-reaj-qtd">Quantidade física encontrada</label>
+        <label for="almox-reaj-qtd">
+          Quantidade física encontrada<span v-if="unidadeMedida" class="opc"> (em {{ unidadeMedida.toLowerCase() }})</span>
+        </label>
         <InputNumber
           v-model="form.quantidade_encontrada"
           input-id="almox-reaj-qtd"
@@ -243,6 +247,9 @@ async function salvar() {
           show-buttons
           class="full"
         />
+        <span v-if="unidadeMedida" class="chip-unidade">
+          Medido em: <strong>{{ unidadeMedida }}</strong>
+        </span>
         <small v-if="diferenca === 0" style="color: var(--warn-fg)">
           Informe uma quantidade diferente do saldo atual ({{ quantidadeAnterior }}) para registrar o reajuste.
         </small>

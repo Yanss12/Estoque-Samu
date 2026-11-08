@@ -67,6 +67,10 @@ function prodPorId(id) {
   return produtosAtivos.value.find((p) => Number(p.id) === Number(id)) ?? null
 }
 
+function unidadeLinha(produtoId) {
+  return (prodPorId(produtoId)?.unidade_medida || '').trim() || null
+}
+
 function ehPermanente(produtoId) {
   return prodPorId(produtoId)?.categoria === 'permanente'
 }
@@ -379,8 +383,10 @@ async function salvar() {
               />
             </div>
 
-            <div class="field" style="flex: 0.85; margin-bottom: 0">
-              <label :for="`ent-qtd-${idx}`">Qtd</label>
+            <div class="field" style="flex: 0.95; margin-bottom: 0">
+              <label :for="`ent-qtd-${idx}`">
+                Qtd<span v-if="unidadeLinha(it.produto_id)" class="opc"> (em {{ unidadeLinha(it.produto_id).toLowerCase() }})</span>
+              </label>
               <InputNumber
                 v-model="it.quantidade"
                 :input-id="`ent-qtd-${idx}`"
@@ -388,6 +394,9 @@ async function salvar() {
                 show-buttons
                 class="full"
               />
+              <span v-if="unidadeLinha(it.produto_id)" class="chip-unidade">
+                Medido em: <strong>{{ unidadeLinha(it.produto_id) }}</strong>
+              </span>
             </div>
 
             <Button

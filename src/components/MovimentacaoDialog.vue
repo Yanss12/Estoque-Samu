@@ -59,6 +59,7 @@ const ehFuncionario = computed(() => form.value.tipo === 'saida' && form.value.m
 const ehOutros = computed(() => form.value.tipo === 'saida' && form.value.motivo === 'outros')
 const produtoSel = computed(() => props.produtos.find((p) => p.id === form.value.produto_id) ?? null)
 const ehControlado = computed(() => !!produtoSel.value?.controlado)
+const unidadeMedida = computed(() => (produtoSel.value?.unidade_medida || '').trim() || null)
 // Lote obrigatório p/ consumíveis; permanente (equipamento) é isento.
 const loteObrigatorio = computed(() => !!produtoSel.value && produtoSel.value.categoria !== 'permanente')
 // Saída multi-lote: usado quando o produto tem lotes e é saída.
@@ -434,9 +435,14 @@ async function salvar() {
           </small>
         </div>
         <!-- Quantidade só aparece quando NÃO é saída multi-lote (entrada ou saída de permanente) -->
-        <div v-if="!usaDistribuicao" class="field" style="width: 9rem">
-          <label>Quantidade</label>
+        <div v-if="!usaDistribuicao" class="field" style="width: 12rem">
+          <label>
+            Quantidade<span v-if="unidadeMedida" class="opc"> (em {{ unidadeMedida.toLowerCase() }})</span>
+          </label>
           <InputNumber v-model="form.quantidade" input-id="mov-qtd" :min="1" show-buttons class="full" />
+          <span v-if="unidadeMedida" class="chip-unidade">
+            Medido em: <strong>{{ unidadeMedida }}</strong>
+          </span>
         </div>
       </div>
 
@@ -468,9 +474,12 @@ async function salvar() {
       <!-- Saída multi-lote: informa quanto sai de cada lote (FEFO sugerido na ordem) -->
       <div v-if="usaDistribuicao" class="field">
         <label>
-          Quantidade
+          Quantidade<span v-if="unidadeMedida" class="opc"> (em {{ unidadeMedida.toLowerCase() }})</span>
           <span class="opc">· {{ ehAvariado ? 'vencidos no topo' : 'primeiro a vencer no topo' }}</span>
         </label>
+        <div v-if="unidadeMedida" style="margin-bottom: 0.25rem">
+          <span class="chip-unidade">Medido em: <strong>{{ unidadeMedida }}</strong></span>
+        </div>
         <div v-if="lotesDisponiveis.length" class="qtd-fefo">
           <InputNumber
             :model-value="qtdTotal"
