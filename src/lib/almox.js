@@ -126,7 +126,7 @@ export function adaptarMov(row) {
 // - Em produção (ALMOX_MOCK = false): consulta a RPC `almox_nivel` no Supabase; falha/ausência => 'nenhum'.
 // - Em dev com ALMOX_MOCK = true: resolve pelo mock sem disparar 404 no console enquanto o backend não existe.
 export async function obterAlmoxNivel(userObj, perfilObj) {
-  if (!userObj) return 'nenhum'
+  if (!userObj || perfilObj?.papel !== 'admin') return 'nenhum'
   if (ALMOX_MOCK) {
     return resolverNivelMock(userObj, perfilObj)
   }
@@ -143,6 +143,7 @@ export async function obterAlmoxNivel(userObj, perfilObj) {
 
 export function resolverNivelMock(userObj, perfilObj) {
   if (!ALMOX_MOCK) return 'nenhum'
+  if (!userObj || !perfilObj || perfilObj.papel !== 'admin') return 'nenhum'
   try {
     const forcar = localStorage.getItem('samu.almox.mock_nivel')
     if (forcar && ['nenhum', 'consulta', 'total'].includes(forcar)) {
@@ -151,13 +152,9 @@ export function resolverNivelMock(userObj, perfilObj) {
   } catch {
     // Ignora erro de localStorage
   }
-  if (!userObj || !perfilObj) return 'nenhum'
-  const papel = perfilObj.papel
-  if (!['farmaceutico', 'admin'].includes(papel)) return 'nenhum'
   const email = (userObj.email || '').toLowerCase()
-  if (email === 'simonessaguiar@gmail.com' || papel === 'farmaceutico') return 'consulta'
-  if (email === 'admin@gmail.com' || papel === 'admin') return 'total'
-  return 'nenhum'
+  if (email === 'simonessaguiar@gmail.com') return 'consulta'
+  return 'total'
 }
 
 function criarErroContrato(message, detail, code = '23514') {

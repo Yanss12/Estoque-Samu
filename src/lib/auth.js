@@ -6,9 +6,9 @@ import { obterAlmoxNivel } from './almox'
 export const session = ref(null)
 export const user = ref(null)
 export const perfil = ref(null)
-export const PAPEIS = ['operador', 'auditor', 'farmaceutico', 'admin']
+export const PAPEIS = ['operador', 'admin']
 export const ehAdmin = computed(() => perfil.value?.papel === 'admin')
-export const podeAuditar = computed(() => ['auditor', 'farmaceutico', 'admin'].includes(perfil.value?.papel))
+export const podeAuditar = ehAdmin
 
 // Estado de acesso ao Módulo Almoxarifado (Seção 8.1)
 export const almoxNivel = ref('nenhum')

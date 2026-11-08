@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { session, podeAuditar, almoxVer, almoxGerir } from './lib/auth'
+import { session, ehAdmin, podeAuditar, almoxVer, almoxGerir } from './lib/auth'
 
 const routes = [
   {
@@ -24,7 +24,7 @@ const routes = [
     path: '/auditoria',
     name: 'auditoria',
     component: () => import('./pages/Auditoria.vue'),
-    meta: { requer: 'podeAuditar' },
+    meta: { requer: 'ehAdmin' },
   },
   { path: '/relatorios', name: 'relatorios', component: () => import('./pages/Relatorios.vue') },
   {
@@ -60,7 +60,7 @@ const routes = [
 ]
 
 // Guarda por papel: meta.requer aponta para um computed exportado por lib/auth.
-const guardas = { podeAuditar, almoxVer, almoxGerir }
+const guardas = { ehAdmin, podeAuditar, almoxVer, almoxGerir }
 
 const router = createRouter({
   history: createWebHashHistory(),

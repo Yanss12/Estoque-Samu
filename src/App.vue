@@ -8,7 +8,7 @@ import Button from 'primevue/button'
 import LogoSamu from './components/LogoSamu.vue'
 import TrocarSenha from './components/TrocarSenha.vue'
 import ContextoSwitch from './components/almox/ContextoSwitch.vue'
-import { user, perfil, precisaTrocarSenha, podeAuditar, almoxVer, signOut } from './lib/auth'
+import { user, perfil, precisaTrocarSenha, ehAdmin, almoxVer, signOut } from './lib/auth'
 import { contexto } from './lib/contexto'
 import { isDark, toggleTheme } from './lib/theme'
 
@@ -23,7 +23,7 @@ const nav = [
   { name: 'movimentacoes', label: 'Movimentações', icon: 'pi pi-arrow-right-arrow-left' },
   { name: 'psicotropicos', label: 'Psicotrópicos', icon: 'pi pi-shield' },
   { name: 'relatorios', label: 'Relatórios', icon: 'pi pi-chart-bar' },
-  { name: 'auditoria', label: 'Auditoria', icon: 'pi pi-clipboard', visivel: () => podeAuditar.value },
+  { name: 'auditoria', label: 'Auditoria', icon: 'pi pi-clipboard', visivel: () => ehAdmin.value },
 ]
 
 const navAlmox = [
@@ -112,7 +112,7 @@ async function sair() {
           />
           <div class="who">
             <span class="name">{{ perfil?.nome || user?.email }}</span>
-            <span class="role">{{ perfil?.papel || 'operador' }}</span>
+            <span class="role">{{ ehAdmin ? 'admin' : 'operador' }}</span>
           </div>
           <Button
             icon="pi pi-key"
