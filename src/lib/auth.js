@@ -72,9 +72,14 @@ export function signIn(email, password) {
   return supabase.auth.signInWithPassword({ email, password })
 }
 
-export function signOut() {
+export async function signOut() {
+  // Limpa o estado local ANTES de chamar o Supabase: o router.push('login') feito logo
+  // depois do signOut() é barrado pelo guard enquanto session ainda estiver preenchida.
   almoxNivel.value = 'nenhum'
   limparChavesContexto()
+  session.value = null
+  user.value = null
+  perfil.value = null
   return supabase.auth.signOut()
 }
 
