@@ -1,4 +1,4 @@
-import{Ft as e,Jt as t,Qt as n,Rt as r,_ as i,pt as a,tn as o}from"./button-BjIV30Uk.js";import{s}from"./index-DAioc5Pv.js";var c=i.extend({name:`toggleswitch`,style:`
+import{Ft as e,Jt as t,Qt as n,Rt as r,_ as i,pt as a,tn as o}from"./button-BjIV30Uk.js";import{s}from"./index-CxbXTU1A.js";var c=i.extend({name:`toggleswitch`,style:`
     .p-toggleswitch {
         display: inline-block;
         width: dt('toggleswitch.width');
