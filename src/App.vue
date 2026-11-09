@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 import Dialog from 'primevue/dialog'
@@ -13,6 +13,7 @@ import { contexto } from './lib/contexto'
 import { isDark, toggleTheme } from './lib/theme'
 
 const router = useRouter()
+const route = useRoute()
 const logged = computed(() => !!user.value)
 const collapsed = ref(false)
 const trocaSenhaVisivel = ref(false)
@@ -47,9 +48,15 @@ watch(almoxVer, (pode) => {
   }
 })
 
+// Sem usuário logado, qualquer rota que não seja pública (login) volta para o login.
+// Cobre Sair (topbar e tela de troca obrigatória) e sessão expirada.
+watch(logged, (ok) => {
+  if (!ok && !route.meta.public) router.replace({ name: 'login' })
+})
+
 async function sair() {
   await signOut()
-  router.push({ name: 'login' })
+  router.replace({ name: 'login' })
 }
 </script>
 
@@ -58,7 +65,10 @@ async function sair() {
   <ConfirmDialog />
 
   <!-- Telas públicas (login) ocupam a tela inteira -->
-  <router-view v-if="!logged" />
+  <router-view v-if="!logged && route.meta.public" />
+
+  <!-- Sem usuário em rota protegida: não mostra nada enquanto volta ao login -->
+  <div v-else-if="!logged" />
 
   <!-- 1º acesso: força a troca da senha padrão antes de liberar o sistema -->
   <div v-else-if="precisaTrocarSenha" class="troca-tela">
