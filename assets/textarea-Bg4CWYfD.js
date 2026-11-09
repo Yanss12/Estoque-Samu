@@ -1,4 +1,4 @@
-import{Jt as e,Qt as t,Rt as n,_ as r,pt as i}from"./button-BjIV30Uk.js";import{o as a}from"./index-BXV5Xuog.js";var o=r.extend({name:`textarea`,style:`
+import{Jt as e,Qt as t,Rt as n,_ as r,pt as i}from"./button-BjIV30Uk.js";import{o as a}from"./index-DAioc5Pv.js";var o=r.extend({name:`textarea`,style:`
     .p-textarea {
         font-family: inherit;
         font-feature-settings: inherit;
