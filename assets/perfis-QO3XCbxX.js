@@ -1,0 +1,1 @@
+import{j as e}from"./button-BFPN1M7R.js";async function t(){let{data:t}=await e.from(`perfis`).select(`id, nome`);return Object.fromEntries((t??[]).map(e=>[e.id,e.nome??`—`]))}export{t};
