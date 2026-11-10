@@ -323,7 +323,18 @@ onMounted(() => {
     </p>
     <div class="field">
       <label for="mes-export">Mês de referência</label>
-      <DatePicker v-model="mesExport" input-id="mes-export" view="month" date-format="mm/yy" show-icon class="full" />
+      <DatePicker
+        v-model="mesExport"
+        input-id="mes-export"
+        view="month"
+        date-format="mm/yy"
+        :manual-input="true"
+        :show-on-focus="false"
+        data-date-mode="month"
+        placeholder="mm/aaaa"
+        show-icon
+        class="full"
+      />
     </div>
     <template #footer>
       <Button label="Cancelar" text severity="secondary" :disabled="exportando" @click="exportVisible = false" />

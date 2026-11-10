@@ -42,7 +42,18 @@ onMounted(carregar)
 
 <template>
   <div class="toolbar">
-    <DatePicker v-model="periodo" selection-mode="range" date-format="dd/mm/yy" show-icon :manual-input="false" aria-label="Período" @update:model-value="periodo?.[1] && carregar()" />
+    <DatePicker
+      v-model="periodo"
+      selection-mode="range"
+      date-format="dd/mm/yy"
+      :manual-input="true"
+      :show-on-focus="false"
+      data-date-mode="range"
+      placeholder="dd/mm/aaaa - dd/mm/aaaa"
+      show-icon
+      aria-label="Período"
+      @update:model-value="periodo?.[1] && carregar()"
+    />
     <span class="grow" />
     <BotoesExportar arquivo="Consumo_funcionarios" aba="Funcionários" :header="header" :linhas="linhasExport" :larguras="[18, 26, 34, 10, 7, 30, 18, 10]" />
   </div>

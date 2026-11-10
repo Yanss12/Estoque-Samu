@@ -10,6 +10,7 @@ import './style.css'
 import router from './router'
 import { initAuth } from './lib/auth'
 import { initTheme } from './lib/theme'
+import { instalarMascaraDatePicker } from './lib/format'
 import App from './App.vue'
 
 // Identidade NEUTRA: cinza (zinc) como cor primária — sem azul. Tokens em style.css.
@@ -63,6 +64,7 @@ const SamuPreset = definePreset(Aura, {
 })
 
 initTheme()
+instalarMascaraDatePicker()
 
 initAuth().then(() => {
   createApp(App)

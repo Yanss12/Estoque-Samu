@@ -339,6 +339,9 @@ async function salvar() {
             v-model="cabecalho.data_documento"
             input-id="almox-ent-datadoc"
             date-format="dd/mm/yy"
+            :manual-input="true"
+            :show-on-focus="false"
+            placeholder="dd/mm/aaaa"
             show-icon
             class="full"
           />
@@ -418,6 +421,9 @@ async function salvar() {
                 :input-id="`ent-val-${idx}`"
                 :disabled="ehPermanente(it.produto_id)"
                 date-format="dd/mm/yy"
+                :manual-input="true"
+                :show-on-focus="false"
+                placeholder="dd/mm/aaaa"
                 show-icon
                 class="full"
               />

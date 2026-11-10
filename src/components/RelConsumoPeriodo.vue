@@ -72,7 +72,18 @@ onMounted(carregar)
 
 <template>
   <div class="toolbar">
-    <DatePicker v-model="periodo" selection-mode="range" date-format="dd/mm/yy" show-icon :manual-input="false" placeholder="Período" aria-label="Período" @update:model-value="periodo?.[1] && carregar()" />
+    <DatePicker
+      v-model="periodo"
+      selection-mode="range"
+      date-format="dd/mm/yy"
+      :manual-input="true"
+      :show-on-focus="false"
+      data-date-mode="range"
+      placeholder="Período"
+      show-icon
+      aria-label="Período"
+      @update:model-value="periodo?.[1] && carregar()"
+    />
     <Button label="Última semana" icon="pi pi-calendar" severity="secondary" outlined @click="atalhoSemana" />
     <SelectButton v-model="grupo" :options="grupoOpcoes" option-label="label" option-value="value" :allow-empty="false" aria-label="Grupo" @update:model-value="carregar" />
     <span class="grow" />
