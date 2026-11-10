@@ -116,7 +116,9 @@ onMounted(carregar)
       selection-mode="range"
       date-format="dd/mm/yy"
       show-icon
-      :manual-input="false"
+      :manual-input="true"
+      :show-on-focus="false"
+      data-date-mode="range"
       placeholder="Período"
       aria-label="Período"
       @update:model-value="periodo?.[1] && carregar()"

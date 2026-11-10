@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -12,8 +13,10 @@ import ProdutoDialog from '../components/ProdutoDialog.vue'
 import Paginador from '../components/Paginador.vue'
 import BaixaVencidosDialog from '../components/BaixaVencidosDialog.vue'
 import { mensagemErro } from '../lib/format'
+import { confirmarExclusaoProduto } from '../lib/farmaciaRelatorios'
 
 const toast = useToast()
+const confirm = useConfirm()
 const linhas = ref([])
 const produtos = ref([])
 const setores = ref([])
@@ -65,6 +68,16 @@ function novoProduto() {
 function editarProduto(row) {
   produtoEdit.value = row
   produtoDialogVisible.value = true
+}
+function excluirProduto(row) {
+  if (!ehAdmin.value) return
+  confirmarExclusaoProduto({
+    confirm,
+    toast,
+    produto: row,
+    onSuccess: carregar,
+    onRefreshWhenMissing: carregar,
+  })
 }
 
 onMounted(carregar)
@@ -140,6 +153,7 @@ onMounted(carregar)
           <Button icon="pi pi-arrow-down" text rounded severity="secondary" class="acao-entrada" v-tooltip.top="'Entrada'" :aria-label="`Entrada de ${data.nome}`" @click="abrir('entrada', data)" />
           <Button icon="pi pi-arrow-up" text rounded severity="secondary" class="acao-saida" v-tooltip.top="'Saída'" :aria-label="`Saída de ${data.nome}`" @click="abrir('saida', data)" />
           <Button v-if="ehAdmin" icon="pi pi-pencil" text rounded severity="secondary" v-tooltip.top="'Editar'" :aria-label="`Editar ${data.nome}`" @click="editarProduto(data)" />
+          <Button v-if="ehAdmin" icon="pi pi-trash" text rounded severity="danger" v-tooltip.top="'Excluir produto'" :aria-label="`Excluir ${data.nome}`" @click="excluirProduto(data)" />
           <Button icon="pi pi-list" text rounded severity="secondary" v-tooltip.top="'Lotes e histórico'" :aria-label="`Lotes e histórico de ${data.nome}`" @click="abrirFicha(data)" />
         </div>
       </template>
@@ -161,7 +175,7 @@ onMounted(carregar)
     :preselect="preselect"
     @saved="carregar"
   />
-  <FichaProduto v-model:visible="fichaVisible" :produto="fichaProduto" />
+  <FichaProduto v-model:visible="fichaVisible" :produto="fichaProduto" @saved="carregar" />
   <BaixaVencidosDialog v-model:visible="baixaVisible" somente-controlados @saved="carregar" />
   <ProdutoDialog
     v-model:visible="produtoDialogVisible"

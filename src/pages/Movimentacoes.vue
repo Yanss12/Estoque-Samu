@@ -232,7 +232,9 @@ onMounted(async () => {
     <DatePicker
       v-model="periodo"
       selection-mode="range"
-      :manual-input="false"
+      :manual-input="true"
+      :show-on-focus="false"
+      data-date-mode="range"
       date-format="dd/mm/yy"
       placeholder="Qualquer data"
       aria-label="Filtrar por período"

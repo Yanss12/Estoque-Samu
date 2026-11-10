@@ -612,7 +612,15 @@ async function salvar() {
           </div>
           <div class="field">
             <label>Validade <span v-if="!loteObrigatorio" class="opc">(opcional)</span></label>
-            <DatePicker v-model="form.validade" date-format="dd/mm/yy" show-icon class="full" />
+            <DatePicker
+              v-model="form.validade"
+              date-format="dd/mm/yy"
+              :manual-input="true"
+              :show-on-focus="false"
+              placeholder="dd/mm/aaaa"
+              show-icon
+              class="full"
+            />
           </div>
         </div>
         <div

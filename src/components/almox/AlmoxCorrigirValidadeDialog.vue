@@ -164,6 +164,8 @@ async function salvar() {
           v-model="novaValidadeData"
           input-id="almox-corr-val-data"
           date-format="dd/mm/yy"
+          :manual-input="true"
+          :show-on-focus="false"
           show-icon
           placeholder="dd/mm/aaaa"
           aria-label="Nova validade"
