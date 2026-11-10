@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Select from 'primevue/select'
@@ -21,8 +22,10 @@ import Paginador from '../components/Paginador.vue'
 import BaixaVencidosDialog from '../components/BaixaVencidosDialog.vue'
 import { exportarRelatorioMensal } from '../lib/relatorioExcel'
 import { mensagemErro, ehValidadeProvisoria } from '../lib/format'
+import { confirmarExclusaoProduto } from '../lib/farmaciaRelatorios'
 
 const toast = useToast()
+const confirm = useConfirm()
 const route = useRoute()
 const router = useRouter()
 
@@ -113,6 +116,16 @@ function novoProduto() {
 function editarProduto(row) {
   produtoEdit.value = row
   produtoDialogVisible.value = true
+}
+function excluirProduto(row) {
+  if (!ehAdmin.value) return
+  confirmarExclusaoProduto({
+    confirm,
+    toast,
+    produto: row,
+    onSuccess: carregar,
+    onRefreshWhenMissing: carregar,
+  })
 }
 // Datas 'YYYY-MM-DD' viram Date no fuso LOCAL (evita o off-by-one do UTC).
 function parseData(v) {
@@ -291,6 +304,7 @@ onMounted(() => {
           <Button icon="pi pi-arrow-down" text rounded severity="secondary" class="acao-entrada" v-tooltip.top="'Entrada'" :aria-label="`Entrada de ${data.nome}`" @click="abrir('entrada', data)" />
           <Button icon="pi pi-arrow-up" text rounded severity="secondary" class="acao-saida" v-tooltip.top="'Saída'" :aria-label="`Saída de ${data.nome}`" @click="abrir('saida', data)" />
           <Button v-if="ehAdmin" icon="pi pi-pencil" text rounded severity="secondary" v-tooltip.top="'Editar'" :aria-label="`Editar ${data.nome}`" @click="editarProduto(data)" />
+          <Button v-if="ehAdmin" icon="pi pi-trash" text rounded severity="danger" v-tooltip.top="'Excluir produto'" :aria-label="`Excluir ${data.nome}`" @click="excluirProduto(data)" />
           <Button icon="pi pi-list" text rounded severity="secondary" v-tooltip.top="'Lotes e histórico'" :aria-label="`Lotes e histórico de ${data.nome}`" @click="abrirFicha(data)" />
         </div>
       </template>
@@ -312,7 +326,7 @@ onMounted(() => {
     :preselect="preselect"
     @saved="carregar"
   />
-  <FichaProduto v-model:visible="fichaVisible" :produto="fichaProduto" />
+  <FichaProduto v-model:visible="fichaVisible" :produto="fichaProduto" @saved="carregar" />
   <BaixaVencidosDialog v-model:visible="baixaVisivel" @saved="carregar" />
   <ProdutoDialog v-model:visible="produtoDialogVisible" :produto="produtoEdit" @saved="carregar" />
 

@@ -1,24 +1,32 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 import Dialog from 'primevue/dialog'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
+import { ehAdmin } from '../lib/auth'
 import { fetchPerfisMap } from '../lib/perfis'
 import { motivoLabel, nomeDestinatario } from '../lib/movimentacoes'
 import { ehValidadeProvisoria } from '../lib/format'
 import { transferenciaAlmoxTag } from '../lib/almox'
+import { confirmarExclusaoProduto } from '../lib/farmaciaRelatorios'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
   produto: { type: Object, default: null },
 })
-const emit = defineEmits(['update:visible'])
+const emit = defineEmits(['update:visible', 'saved'])
 
+const toast = useToast()
+const confirm = useConfirm()
 const lotes = ref([])
 const movs = ref([])
 const perfisMap = ref({})
 const carregando = ref(false)
+const excluindo = ref(false)
 
 watch(
   () => props.visible,
@@ -59,6 +67,24 @@ function fmtData(d) {
 }
 function autor(m) {
   return perfisMap.value[m.usuario_id] || 'usuário removido'
+}
+
+function pedirExclusao() {
+  if (!ehAdmin.value || !props.produto) return
+  confirmarExclusaoProduto({
+    confirm,
+    toast,
+    produto: props.produto,
+    onLoadingChange: (v) => (excluindo.value = v),
+    onSuccess: () => {
+      emit('saved')
+      emit('update:visible', false)
+    },
+    onRefreshWhenMissing: () => {
+      emit('saved')
+      emit('update:visible', false)
+    },
+  })
 }
 </script>
 
@@ -113,5 +139,19 @@ function autor(m) {
         <template #body="{ data }"><span style="font-size: 0.85rem">{{ autor(data) }}</span></template>
       </Column>
     </DataTable>
+
+    <template #footer>
+      <Button
+        v-if="ehAdmin && produto"
+        label="Excluir produto"
+        icon="pi pi-trash"
+        severity="danger"
+        outlined
+        :loading="excluindo"
+        style="margin-right: auto"
+        @click="pedirExclusao"
+      />
+      <Button label="Fechar" text severity="secondary" :disabled="excluindo" @click="emit('update:visible', false)" />
+    </template>
   </Dialog>
 </template>

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
@@ -8,8 +9,10 @@ import InputNumber from 'primevue/inputnumber'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Button from 'primevue/button'
 import { supabase } from '../lib/supabase'
+import { ehAdmin } from '../lib/auth'
 import { CATEGORIAS } from '../lib/categorias'
 import { mensagemErro } from '../lib/format'
+import { confirmarExclusaoProduto } from '../lib/farmaciaRelatorios'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -19,7 +22,9 @@ const props = defineProps({
 const emit = defineEmits(['update:visible', 'saved'])
 
 const toast = useToast()
+const confirm = useConfirm()
 const salvando = ref(false)
+const excluindo = ref(false)
 const ehEdicao = ref(false)
 const form = ref(novoForm())
 // Estado do produto no banco (só na edição) — o banco aplica as mesmas regras.
@@ -99,6 +104,24 @@ watch(
 
 function fechar() {
   emit('update:visible', false)
+}
+
+function pedirExclusao() {
+  if (!ehEdicao.value || !ehAdmin.value) return
+  confirmarExclusaoProduto({
+    confirm,
+    toast,
+    produto: form.value.id ? form.value : props.produto,
+    onLoadingChange: (v) => (excluindo.value = v),
+    onSuccess: () => {
+      emit('saved')
+      fechar()
+    },
+    onRefreshWhenMissing: () => {
+      emit('saved')
+      fechar()
+    },
+  })
 }
 
 async function salvar() {
@@ -198,8 +221,19 @@ async function salvar() {
     </form>
 
     <template #footer>
-      <Button label="Cancelar" text severity="secondary" @click="fechar" :disabled="salvando" />
-      <Button type="submit" form="prodform" :label="ehEdicao ? 'Salvar alterações' : 'Cadastrar produto'" :loading="salvando" />
+      <Button
+        v-if="ehEdicao && ehAdmin"
+        label="Excluir produto"
+        icon="pi pi-trash"
+        severity="danger"
+        outlined
+        :loading="excluindo"
+        :disabled="salvando"
+        style="margin-right: auto"
+        @click="pedirExclusao"
+      />
+      <Button label="Cancelar" text severity="secondary" @click="fechar" :disabled="salvando || excluindo" />
+      <Button type="submit" form="prodform" :label="ehEdicao ? 'Salvar alterações' : 'Cadastrar produto'" :loading="salvando" :disabled="excluindo" />
     </template>
   </Dialog>
 </template>
